@@ -1,0 +1,257 @@
+#include <sys/stat.h>
+#include <iostream>
+#include <complex>
+#include <cmath>
+#include <cstring>
+#include <memory>
+#define CNTR_USE_OMP
+#define CNTR_USE_MPI
+#include "cntr/cntr.hpp"
+#include "cntr/utils/read_inputfile.hpp"
+#include "../step/step.hpp"
+#include "print.hpp"
+#include "parameters.hpp"
+
+using namespace std; 
+#if CNTR_USE_MPI==1
+#define USE_MPI 1
+#endif
+
+
+#include <time.h>
+#include <sys/time.h>
+
+
+parameters_tns::parameters_tns(int nt,int kt,int nk,int ntau,int size,double beta,double h,double mu,double den, double epsilon,double v01,std::vector<double> &U,std::vector<double> &V,std::vector<double> &Ex,std::vector<double> &Ey,std::complex<double> &dipol,bool update,double eta,double gamma,double mix,int omp_for_vie2):
+		nt(nt), kt(kt), nk(nk), ntau(ntau), size(size), beta(beta), h(h), mu(mu), den(den), epsilon(epsilon),v01(v01),U(U),V(V),Ex(Ex),Ey(Ey),dipol(dipol),update(update),eta(eta),gamma(gamma),mix(mix),omp_for_vie2(omp_for_vie2){};
+
+double get_wall_time(){
+    struct timeval time;
+    if (gettimeofday(&time,NULL)){
+        return 0;
+    }
+    return (double)time.tv_sec + (double)time.tv_usec * .000001;
+}
+double get_cpu_time(){
+    return (double)clock() / CLOCKS_PER_SEC;
+}
+
+void spy(int tstp,const char *file_prefix){
+	char filename[1000];
+	FILE *out;
+	sprintf(filename,"%s_status.out",file_prefix);
+	out=std::fopen(filename,"w");
+	if(out==0){
+		std::cout << "cannot create file " << filename << std::endl;
+		abort();
+	}
+	fprintf(out,"finished step %d",tstp);
+	std::fclose(out);
+}
+
+int main(int argc,char *argv[]){
+	int tid,ntasks,ntau,nt,itermax,iter_rtime,omp_for_vie2,kt,nk,tstp=-2,iter,print_k,outputfrequency,size=6;
+	int restart_time,cont,use_rpa=true;
+	bool test,update;
+	double mu,den,beta,h,errmax,errmax_rtime,err,v01,mazza,epsilon,mix,gamma;
+	double wtime_limit,wtime_start,wtime_end,xi,dipolRe,dipolIm,eta;
+	std::vector<double> U,V,delta,Ex,Ey;
+	approx<lattice_1d_hubbard> *lattice;
+	int approximation,suscep,migdal;
+	double om0,s,amp;
+	
+	// (I) MPI initialization ... uses MPI over kpoints with one omp task per rank
+	{
+		#if USE_MPI==1
+			MPI_Init(&argc,&argv);
+			MPI_Comm_size (MPI_COMM_WORLD,
+&ntasks);
+			MPI_Comm_rank(MPI_COMM_WORLD, &tid);
+		#else
+			ntasks=1;
+			tid=0;
+		#endif
+		wtime_start=get_wall_time();
+	}
+	
+	////////////////////////////////////////////////////////////////////////////////////	
+	// (II) READ GENERAL INPUT
+	{
+		// if(argc<3) throw("COMMAND LINE ARGUMENT MISSING");
+		// argv[1]: input-file (including full path)
+		// argv[2]: output-file prefix (including full path): output-files are called argv[2]_some_observable etc.
+		// argv[3]: needed only for restart at timestep >= -1
+		find_param(argv[1],"__nt=",nt);
+		find_param(argv[1],"__ntau=",ntau);
+		find_param(argv[1],"__beta=",beta);
+		find_param(argv[1],"__h=",h);    
+		find_param(argv[1],"__mu=",mu);
+		find_param(argv[1],"__den=",den);
+		find_param(argv[1],"__approximation=",approximation); // 0 - mean field, 1 - gw, 2 - gkba
+		find_param(argv[1],"__itermax=",itermax);
+		find_param(argv[1],"__errmax=",errmax);
+		find_param(argv[1],"__iter_rtime=",iter_rtime);
+		find_param(argv[1],"__err_rtime=",errmax_rtime);
+		find_param(argv[1],"__kt=",kt);
+		find_param(argv[1],"__print_k=",print_k); //Write k-dependent quantities to output
+		find_param(argv[1],"__suscep=",suscep);
+		find_param(argv[1],"__omp_for_vie2=",omp_for_vie2);
+		find_param(argv[1],"__outputfrequency=",outputfrequency);
+		find_param(argv[1],"__restart_time=",restart_time);
+		find_param(argv[1],"__walltime_limit=",wtime_limit);
+		find_param(argv[1],"__test=",test);
+		find_param(argv[1],"__update=",update);
+		find_param(argv[1],"__eta=",eta);
+	}
+	//////////////////////////////////////////////////////////////////////////////////
+	// init the lattice and the physical input parameters
+	{
+		find_param(argv[1],"__nk=",nk);
+		find_param(argv[1],"__v01=",v01);	//Seed for pair breaking field (present in hamiltonian in first 5 iterations for equilibrium)
+		find_param(argv[1],"__mix=",mix);
+		find_param_tvector(argv[1],"__U=",U,nt);
+		find_param_tvector(argv[1],"__V=",V,nt);
+		find_param_tvector(argv[1],"__Ex=",Ex,nt);
+		find_param_tvector(argv[1],"__Ey=",Ey,nt);
+		find_param(argv[1],"__dipolRe=",dipolRe);
+		find_param(argv[1],"__dipolIm=",dipolIm);
+		find_param(argv[1],"__gamma=",gamma);
+		find_param(argv[1],"__epsilon=",epsilon);
+		find_param(argv[1],"__migdal=",migdal);
+		find_param(argv[1],"__s=",s);
+		find_param(argv[1],"__amp=",amp);
+	}
+	std::complex<double> dipol(dipolRe,dipolIm);
+	parameters_tns param(nt,kt,nk,ntau,size,beta,h,mu,den,epsilon,v01,U,V,Ex,Ey,dipol,update,eta,gamma,mix,(omp_for_vie2==1 ? true : false));
+	switch(approximation){
+	case 0 : lattice=new mpi_lattice_step_hubbard<lattice_2d_tns>(param);break;
+	// case 3 : lattice=new mpi_lattice_step_hubbard_RPA<lattice_2d_tns>(param);break;
+	// case 1 : lattice=new mpi_lattice_step_GKBA<lattice_1d_2b_nofield,phonon_dipol>(nt,ntau,size,beta,h,(omp_for_vie2==1 ? true : false),mu,epsilon,tt,U,V,g,omega0,xi,delta,A,dA,v01,nk,kt);break;
+	// case 2 : lattice=new mpi_lattice_step_RPA<lattice_1d_2b_nofield,phonon_dipol>(nt,ntau,size,beta,h,(omp_for_vie2==1 ? true : false),mu,epsilon,tt,U,V,g,omega0,xi,delta,A,dA,v01,nk,kt,test,mix);break;
+	// case 3 : lattice=new mpi_lattice_step_2b_optical<lattice_1d_2b_nofield,phonon_dipol>(nt,ntau,size,beta,h,(omp_for_vie2==1 ? true : false),mu,epsilon,tt,U,V,g,omega0,xi,delta,E,dE,dipolRe,dipolIm,v01,nk,gamma,update,fieldP,fieldD,kt,test,mix);break;
+	}
+	// TODO
+	if(restart_time!=-1){
+		if(argc<4) throw("INPUT FILE PREFIX (including path) NEEDED FOR RESTART");
+		if(restart_time>nt) throw("RESTART TIME > NT ");
+		lattice->read_from_file_hdf5(restart_time-1,argv[3],kt);
+		// TODO I you want restart
+		// for(tstp=-1;tstp<restart_time;tstp++) lattice_rpa.gather_kk_observables(tstp,kt);
+		// TODO I you want restart
+	}else if(restart_time==-1 && argc==4){
+		if(argc<4) throw("INPUT FILE PREFIX (including path) NEEDED FOR RESTART");
+		std::cout << "Seeding the equilibrium solution" << std::endl;
+		lattice->read_from_file_hdf5(-1,argv[3],kt);
+		// lattice->gather_kk_observables(-1,kt);
+	}
+	std::ofstream out;
+	// out.open("disper.out");
+	// std::cout << "tu smo  4 "<< std::endl;
+	// for(int k=0;k<lattice->latt_.nk_;k++){
+	//   Eigen::MatrixXcd vtmp;
+	//   out << lattice->latt_.kpoints_[k];
+	//   std::cout << "tu smo  4a "<< std::endl;
+	//   lattice->latt_.hk(vtmp,-1,lattice->latt_.kpoints_[k],1);
+	//   std::cout << "tu smo  4b "<< std::endl;
+	//   out << " " << vtmp(0,0).real() << " " << vtmp(1,1).real()  <<  " ";
+	//   lattice->latt_.hkfree(vtmp,-1,lattice->latt_.kpoints_[k]);
+	//   std::cout << "tu smo  4c "<< std::endl;
+	//   out << " " << vtmp(0,0).real() << " " << vtmp(1,1).real() << std::endl;
+	//   std::cout << "tu smo  4d "<< std::endl;
+	// }
+	// out.close();
+
+	if(tid==0) spy(tstp,argv[2]);
+	//////////////////////////////////////////////////////////////////////////////////
+	// initialization: G is initially zero, thus also Simga=0 and the first step 
+	// should produce non-interactng Greens functions
+	for(tstp=restart_time;tstp<=nt;tstp++){
+		int itermax1;
+		double errmax1;
+		int kt1;
+		if(tstp==-1){
+			kt1=kt;
+			errmax1=errmax;
+			itermax1=itermax;
+		}else{
+			kt1=(tstp>=kt ? kt : tstp);
+			errmax1=errmax_rtime;
+			itermax1=iter_rtime;			
+		}
+
+		// if(tstp>0) lattice->
+		for(iter=1;iter<=itermax1;iter++){
+		  	err=lattice->step(tstp,iter,kt,om0,s,amp); /// should work at time zero!
+		  if(tid==0){
+		  	cdmatrix tmp;
+		  	lattice->rho_loc_.get_value(tstp,tmp);
+		  	cout << "tstp= " << tstp << " iter:  " << iter << " err: " << err << " - " << tmp << " " << tmp.trace() << endl;	
+		  }
+		  // Set up the local density matrix for the Hartree shift
+		  cdmatrix tmp;
+		  lattice->rho_loc_.get_value(-1,tmp);
+		  lattice->latt_.rho_eq_=tmp;
+		  if(err<errmax1 && iter>2 ){
+		    if(tstp==-1){
+		      out.open("disper_eq.out");
+		      for(int k=0;k<lattice->latt_.nk_;k++){
+				Eigen::MatrixXcd vtmp;
+				out << lattice->latt_.kpoints_[k];
+				lattice->density_k_[k].hkeff_.get_value(-1,vtmp);
+				out << " " << vtmp(0,0).real() << " " << vtmp(0,1).real() << " " << vtmp(1,0).real() << " " << vtmp(1,1).real()  <<  " ";
+				lattice->density_k_[k].hkeff_eigen_.get_value(-1,vtmp);
+				out << " " << vtmp(0,0).real() << " " << vtmp(1,1).real()  <<  " ";
+				lattice->latt_.hkfree(vtmp,-1,lattice->latt_.kpoints_[k]);
+				out << " " << vtmp(0,0).real() << " " << vtmp(0,1).real() << " " << vtmp(1,0).real() << " " << vtmp(1,1).real()  << std::endl;
+		      }
+		      out.close();
+
+		    }
+		    break;
+		  }
+		}
+		if(tstp==-1 and err>errmax1){
+			std::cout << "Matsubara didn't converged" << std::endl;
+			abort();
+		}
+		//lattice->get_optical0_eq(0.0,0,0);
+		//std::cout << "Matsubara converged" << std::endl;
+		/// timestep converged: collect observables
+		//lattice_rpa.gather_kk_observables(tstp,kt);
+		//std::cout << "obtained kk" << std::endl;
+		// lattice_rpa.get_Gloc(tstp);
+		//std::cout << "obtained gloc" << std::endl;
+		// if the walltime exceeds the limit: break and save the result
+		if(tid==0){
+		  wtime_end=get_wall_time();	
+		  cont=( wtime_end-wtime_start>wtime_limit ? 0 : 1);
+		  std::cout << "finished tstp= " << tstp << " after " << wtime_end-wtime_start << " seconds" << std::endl;
+		}
+		MPI_Bcast(&cont, 1, MPI_INTEGER,0, MPI_COMM_WORLD);
+		if(!cont){
+		  if(tid==0){
+		    std::cout << "ended calculations after " << wtime_end-wtime_start << " seconds" << " at tstp= " << tstp << std::endl;
+		  }
+		  tstp++;
+		  break;
+		}
+		if(tstp==-1 || tstp%outputfrequency==0) if(tid==0) spy(tstp,argv[2]);
+	}
+	// lattice->print_to_file_hdf5_slice(argv[2],outputfrequency);
+	// lattice_rpa.print_diagonal_occupations(argv[2],-1,tstp-1,kt,h,size);
+	char filename[1000];
+	std::cout << "output " << argv[2]<< std::endl;
+	sprintf(filename,"%s_full",argv[2]);
+	lattice->print_to_file_hdf5(filename,print_k);
+	lattice->print_to_file_hdf5_slice(argv[2],outputfrequency,print_k);
+	////////////////////////////////////////////////////////////////////////////////////
+	// .....
+	///////////////////////////////////////////////////////////////////////////////////
+	
+	MPI_Finalize();	
+	return 0;
+}
+
+
+
+
