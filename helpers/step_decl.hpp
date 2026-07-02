@@ -8,7 +8,7 @@
 #include "cntr/cntr.hpp"
 #include "cntr/hdf5/hdf5_interface.hpp"
 #include "cntr/hdf5/hdf5_interface_cntr.hpp"
-#include "../program/parameters.hpp"
+#include "parameters.hpp"
 // #include <boost/numeric/odeint.hpp>
 
 #define ASSERT_0 1

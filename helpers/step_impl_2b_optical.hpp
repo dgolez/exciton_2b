@@ -1,6 +1,6 @@
 #pragma once
 
-#include "step.hpp"
+#include "inclusions.hpp"
 
 template <class LATTICE>
 mpi_lattice_step_2b_optical<LATTICE>::mpi_lattice_step_2b_optical(parameters &param):

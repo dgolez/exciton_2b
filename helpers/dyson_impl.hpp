@@ -1,6 +1,6 @@
 #pragma once
 
-#include "step.hpp"
+#include "inclusions.hpp"
 
 template <class LATTICE>
 kpoint_density<LATTICE>::kpoint_density(void){

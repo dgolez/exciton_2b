@@ -1,8 +1,8 @@
 #pragma once
 
-#include "step.hpp"
+#include "inclusions.hpp"
 #include <chrono> 
-#include "../program/parameters.hpp"
+#include "parameters.hpp"
 using namespace std::chrono;
 
 template <class LATTICE>

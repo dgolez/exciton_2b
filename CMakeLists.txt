@@ -50,5 +50,4 @@ if (mpi)
     list(APPEND COMMON_LIBS ${MPI_LIBRARIES})
 endif ()
 
-
 add_subdirectory(program)

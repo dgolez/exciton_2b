@@ -8,19 +8,17 @@
 #define CNTR_USE_MPI
 #include "cntr/cntr.hpp"
 #include "cntr/utils/read_inputfile.hpp"
-#include "../step/step.hpp"
-#include "print.hpp"
-#include "parameters.hpp"
+#include "../helpers/inclusions.hpp"
+#include "../helpers/print.hpp"
+#include "../helpers/parameters.hpp"
 
 using namespace std; 
 #if CNTR_USE_MPI==1
 #define USE_MPI 1
 #endif
 
-
 #include <time.h>
 #include <sys/time.h>
-
 
 parameters::parameters(int nt,int kt,int nk,int ntau,int size,double beta,double h,double mu,double den, double epsilon, double xi,std::vector<double> &delta,double v01,double v01_time,int suscep,std::vector<double> &tt,std::vector<double> &U,std::vector<double> &V,CFUNC &omega0,CFUNC &g,std::vector<double> &E,std::vector<double> &dE,double dipolRe,double dipolIm,double ratio,double fieldP,double fieldD,double mazza,bool update,double eta,double gamma,double mix,bool test,int omp_for_vie2,int phonontype,double bath_low,double bath_high,std::vector<double> &gC_bath,std::vector<double> &gV_bath,int migdal,std::vector<double> &gBATH,std::vector<double> &omegaBATH): 
 		nt(nt), ntau(ntau), size(size), nk(nk), kt(kt), beta(beta), h(h), mu(mu), den(den), epsilon(epsilon),xi(xi),delta(delta),v01(v01),v01_time(v01_time),suscep(suscep),
@@ -224,7 +222,6 @@ int main(int argc,char *argv[]){
 			itermax1=iter_rtime;			
 		}
 
-
 		// if(tstp>0) lattice->
 		for(iter=1;iter<=itermax1;iter++){
 		  err=lattice->step(tstp,iter,kt,om0,s,amp); /// should work at time zero!
@@ -304,7 +301,3 @@ int main(int argc,char *argv[]){
 	MPI_Finalize();	
 	return 0;
 }
-
-
-
-

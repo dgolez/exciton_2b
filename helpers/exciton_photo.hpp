@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../step/step.hpp"
-#include "../program/parameters.hpp"
+#include "inclusions.hpp"
+#include "parameters.hpp"
 #include <iostream>
 
 lattice_1d_2b_optical_nofield_abinitio::lattice_1d_2b_optical_nofield_abinitio(void){
