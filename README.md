@@ -18,64 +18,64 @@ Many files are not needed for this purpose. I put them to `other`.
 - den: occupation
 
 
-__itermax:
-__errmax: 
-__iter_rtime:
-__err_rtime:
-__walltime_limit
-__kt: probably integration order used in solving Dyson's equation, but I need to check
-__print_k:
+- itermax:
+- errmax: 
+- iter_rtime:
+- err_rtime:
+- walltime_limit
+- kt: probably integration order used in solving Dyson's equation, but I need to check
+- print_k:
 
-__suscep
-__omp_for_vie2
-__outputfrequency
-__restart_time
+- suscep
+- omp_for_vie2
+- outputfrequency
+- restart_time
 
-__test
-__update
+- test
+- update
 
-__fieldD
-__fieldP
-__eta
+- fieldD
+- fieldP
+- eta
 
-__nk: number of k points
-__v01: Seed for pair breaking field (present in hamiltonian in first 5 iterations for equilibrium)
-__v01_time
-__mazza
-__mix
-__phonontype
+- nk: number of k points
+- v01: Seed for pair breaking field (present in hamiltonian in first 5 iterations for equilibrium)
+- v01_time
+- mazza
+- mix
+- phonontype
 
-__U: U, V and xi together define the interaction vertex as given in PHYSICAL REVIEW B 94, 035121 (2016); see `exciton_photo.hpp`
-__V
-__xi
+- U: U, V and xi together define the interaction vertex as given in PHYSICAL REVIEW B 94, 035121 (2016); see `exciton_photo.hpp`. in practice here V is put to 0 and in this case the value of xi doesn't matter
+- V
+- xi
 
-__g: electron-phonon coupling; see `exciton_photo.hpp`
-__omega0
-__tt
-__delta
-__E
-__dE
-__dipolRe
-__dipolIm
-__gamma
-__epsilon
-__om0
-__migdal
-__s
-__amp
-__ratio
+- g: electron-phonon coupling; see `exciton_photo.hpp`
+- omega0
+- tt
+- delta
+- E
+- dE
+- dipolRe
+- dipolIm
+- gamma
+- epsilon
+- om0
+- migdal
+- s
+- amp
+- ratio
 
 
-__bath_low
-__bath_high
-__gC_bath
-__gV_bath
-__gBATH
-__omegaBATH
+- bath_low
+- bath_high
+- gC_bath
+- gV_bath
+- gBATH
+- omegaBATH
 
 
 Redundant parameters:
-__use_rpa: use_rpa is set to true
-__v02: does not appear anywhere
-__a_selective: does not appear anywhere
-__approximation: removed it, I will use fixed approximation
+- use_rpa: use_rpa is set to true
+- v02: does not appear anywhere
+- a_selective: does not appear anywhere
+- approximation: removed it, I will use fixed approximation
