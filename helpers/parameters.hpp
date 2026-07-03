@@ -46,3 +46,4 @@ class parameters_tns{
 	std::vector<double> tt,U,V,Ex,Ey;
 	bool update;
 };
+
