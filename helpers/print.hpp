@@ -2,6 +2,7 @@
 
 #include "inclusions.hpp"
 
+
 template <class LATTICE>
 void kpoint_green<LATTICE>::read_from_hdf5(int tstp,hid_t group_id,LATTICE &latt,kpoint_density<LATTICE> &density){
 	std::ostringstream groupname;
