@@ -740,6 +740,7 @@ std::complex<double> mpi_lattice_step_optical<LATTICE>::get_optical0(CFUNC &opti
 	    optics.set_value(io,previous);
 	} //OMEGA LOOP
   }//K LOOP
+  return optical0;
 }
 
 
@@ -804,7 +805,7 @@ std::complex<double> mpi_lattice_step_optical<LATTICE>::get_dos(CFUNC &dos,doubl
   	  dos.set_value(io,previous);
   	}
   }
-  //return phi;
+  return phi;
 }
 
 #define EXPMAX 100
