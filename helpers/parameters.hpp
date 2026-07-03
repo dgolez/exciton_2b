@@ -8,6 +8,7 @@ class parameters{
 	int nt,ntau,size,nk,kt,suscep,omp_for_vie2,phonontype,migdal;
 	double beta,h,mu,den,epsilon,xi,v01,v01_time,ratio,fieldP,fieldD,mazza,eta,gamma,mix;
 	double bath_low,bath_high;
+
 	std::vector<double> gC_bath,gV_bath;
 	std::vector<double> gBATH,omegaBATH;
  	std::complex<double> dipol;
