@@ -10,12 +10,12 @@ Many files are not needed for this purpose. I put them to `other`.
 
 ## Meaning of parameters
 
--__nt: number of time steps
--__ntau: number of steps on imaginary branch
-__beta: inverse temperature
-__h:
-__mu: chemical potential 
-__den: occupation
+- nt: number of time steps
+- ntau: number of steps on imaginary branch
+- beta: inverse temperature
+- h:
+- mu: chemical potential 
+- den: occupation
 
 
 __itermax:
