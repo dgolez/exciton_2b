@@ -4,8 +4,9 @@
 #include <cmath>
 #include <cstring>
 #include <memory>
+#ifndef CNTR_USE_OMP
 #define CNTR_USE_OMP
-#define CNTR_USE_MPI
+#endif
 #include "cntr/cntr.hpp"
 #include "cntr/utils/read_inputfile.hpp"
 #include "../helpers/inclusions.hpp"
@@ -57,7 +58,7 @@ int main(int argc,char *argv[]){
 	double wtime_limit,wtime_start,wtime_end,xi,dipolRe,dipolIm,eta;
 	std::vector<double> U,V,tt,delta,E,dE,gVec,omega0Vec,gBATH,omegaBATH;
 	approx<lattice_1d_2b_optical_nofield_abinitio> *lattice;
-	int approximation,suscep,migdal;
+	int suscep,migdal;
 	double om0,s,amp,fieldD,fieldP,ratio,phonontype;
 	//Bath parameters
 	double bath_low,bath_high;
@@ -89,7 +90,6 @@ int main(int argc,char *argv[]){
 		find_param(argv[1],"__h=",h);    
 		find_param(argv[1],"__mu=",mu);
 		find_param(argv[1],"__den=",den);
-		find_param(argv[1],"__approximation=",approximation); // 0 - mean field, 1 - gw, 2 - gkba
 		find_param(argv[1],"__itermax=",itermax);
 		find_param(argv[1],"__errmax=",errmax);
 		find_param(argv[1],"__iter_rtime=",iter_rtime);
@@ -171,15 +171,8 @@ int main(int argc,char *argv[]){
 	std::cout << den << std::endl;
 	parameters param(nt,kt,nk,ntau,size,beta,h,mu,den,epsilon,xi,delta,v01,v01_time,suscep,tt,U,V,omega0,g,E,dE,dipolRe,dipolIm,ratio,fieldP,fieldD,mazza,update,eta,gamma,mix,test,(omp_for_vie2==1 ? true : false),phonontype,bath_low,bath_high,gC_bath,gV_bath,migdal,gBATH,omegaBATH);
 
-	switch(approximation){
-	  // TOdo change also for gw and 2b
-	  case 0 : lattice=new mpi_lattice_step_optical<lattice_1d_2b_optical_nofield_abinitio>(param);break;
-	  case 3 : lattice=new mpi_lattice_step_2b_optical<lattice_1d_2b_optical_nofield_abinitio>(param);break;
-		// case 1 : lattice=new mpi_lattice_step_GKBA<lattice_1d_2b_nofield,phonon_dipol>(nt,ntau,size,beta,h,(omp_for_vie2==1 ? true : false),mu,epsilon,tt,U,V,g,omega0,xi,delta,A,dA,v01,nk,kt);break;
-		// case 2 : lattice=new mpi_lattice_step_RPA<lattice_1d_2b_nofield,phonon_dipol>(nt,ntau,size,beta,h,(omp_for_vie2==1 ? true : false),mu,epsilon,tt,U,V,g,omega0,xi,delta,A,dA,v01,nk,kt,test,mix);break;
-		// case 3 : lattice=new mpi_lattice_step_2b_optical<lattice_1d_2b_nofield,phonon_dipol>(nt,ntau,size,beta,h,(omp_for_vie2==1 ? true : false),mu,epsilon,tt,U,V,g,omega0,xi,delta,E,dE,dipolRe,dipolIm,v01,nk,gamma,update,fieldP,fieldD,kt,test,mix);break;
-	}
-	// TODO
+	lattice=new mpi_lattice_step_2b_optical<lattice_1d_2b_optical_nofield_abinitio>(param);
+
 	if(restart_time!=-1){
 		if(argc<4) throw("INPUT FILE PREFIX (including path) NEEDED FOR RESTART");
 		if(restart_time>nt) throw("RESTART TIME > NT ");
