@@ -1,3 +1,7 @@
+to do:
+finish documentation of various parameters below
+write section on how to run program
+
 # exciton_2b
 This program (written by Denis Golež) uses the Keldysh formalism to evaluate the response of an excitonic insulator after a photoexcitation. The motivation for this comes from trARPES measurements in Ta2NiSe5.
 
@@ -79,3 +83,5 @@ Redundant parameters:
 - v02: does not appear anywhere
 - a_selective: does not appear anywhere
 - approximation: removed it, I will use fixed approximation
+
+## How one runs the program
