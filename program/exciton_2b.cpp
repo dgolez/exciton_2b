@@ -198,8 +198,8 @@ int main(int argc,char *argv[]){
 	out.close();
 	if(tid==0) spy(tstp,argv[2]);
 	//////////////////////////////////////////////////////////////////////////////////
-	// initialization: G is initially zero, thus also Simga=0 and the first step 
-	// should produce non-interactng Greens functions
+	// initialization: G is initially zero, thus also Sigma=0 and the first step
+	// should produce non-interacting Greens functions
 	for(tstp=restart_time;tstp<=nt;tstp++){
 		int itermax1;
 		double errmax1;
@@ -217,6 +217,18 @@ int main(int argc,char *argv[]){
 		// if(tstp>0) lattice->
 		for(iter=1;iter<=itermax1;iter++){
 		  err=lattice->step(tstp,iter,kt,om0,s,amp); /// should work at time zero!
+		  if(tstp==-1 && iter==1){
+			  auto *step_2b=static_cast<mpi_lattice_step_2b_optical<lattice_1d_2b_optical_nofield_abinitio> *>(lattice);
+			  CFUNC sigma_hartree_original(nt,size),sigma_hartree_split(nt,size);
+			  cdmatrix original_value(size,size),split_value(size,size);
+			  step_2b->get_Sigma_Hartree_original(-1,sigma_hartree_original);
+			  step_2b->get_Sigma_Hartree(-1,sigma_hartree_split);
+			  sigma_hartree_original.get_value(-1,original_value);
+			  sigma_hartree_split.get_value(-1,split_value);
+			  double hartree_split_error=(original_value-split_value).norm();
+			  if(tid==0) std::cout << "Hartree split verification, ||Sigma_original - Sigma_split|| = " << hartree_split_error << std::endl;
+			  if(hartree_split_error>1e-12) throw("Hartree split verification failed");
+		  }
 		  if(tid==0){
 		  	cdmatrix tmp(2,2),tmpsym(2,2),ord(1,1);
 		  	lattice->rho_loc_.get_value(tstp,tmp);
