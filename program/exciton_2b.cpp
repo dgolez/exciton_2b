@@ -21,9 +21,9 @@ using namespace std;
 #include <time.h>
 #include <sys/time.h>
 
-parameters::parameters(int nt,int kt,int nk,int ntau,int size,double beta,double h,double mu,double den, double epsilon, double xi,std::vector<double> &delta,double v01,double v01_time,std::vector<double> &tt,std::vector<double> &U,std::vector<double> &V,CFUNC &omega0,CFUNC &g,std::vector<double> &E,double dipolRe,double dipolIm,double ratio,double fieldP,double fieldD,double mazza,bool update,double eta,double gamma,double mix,bool test,int omp_for_vie2,int phonontype,double bath_low,double bath_high,std::vector<double> &gC_bath,std::vector<double> &gV_bath,int migdal,std::vector<double> &gBATH,std::vector<double> &omegaBATH): 
-		nt(nt), ntau(ntau), size(size), nk(nk), kt(kt), beta(beta), h(h), mu(mu), den(den), epsilon(epsilon),xi(xi),delta(delta),v01(v01),v01_time(v01_time),
-		tt(tt),U(U),V(V),omega0(omega0),g(g),E(E),dipol(dipolRe,dipolIm),ratio(ratio),fieldP(fieldP),fieldD(fieldD),mazza(mazza),update(update),eta(eta),gamma(gamma),mix(mix),test(test),omp_for_vie2(omp_for_vie2),phonontype(phonontype),bath_low(bath_low),bath_high(bath_high),gC_bath(gC_bath),gV_bath(gV_bath),migdal(migdal),gBATH(gBATH),omegaBATH(omegaBATH){};
+parameters::parameters(int nt,int kt,int nk,int ntau,int size,double beta,double h,double mu,double den, double xi,std::vector<double> &delta,double v01,double v01_time,std::vector<double> &tt,std::vector<double> &U,std::vector<double> &V,CFUNC &omega0,CFUNC &g,std::vector<double> &E,double dipolRe,double dipolIm,double ratio,double fieldP,double fieldD,double mazza,bool update,double eta,double mix,bool test,int omp_for_vie2,int phonontype,double bath_low,double bath_high,std::vector<double> &gC_bath,std::vector<double> &gV_bath,int migdal,std::vector<double> &gBATH,std::vector<double> &omegaBATH): 
+		nt(nt), ntau(ntau), size(size), nk(nk), kt(kt), beta(beta), h(h), mu(mu), den(den),xi(xi),delta(delta),v01(v01),v01_time(v01_time),
+		tt(tt),U(U),V(V),omega0(omega0),g(g),E(E),dipol(dipolRe,dipolIm),ratio(ratio),fieldP(fieldP),fieldD(fieldD),mazza(mazza),update(update),eta(eta),mix(mix),test(test),omp_for_vie2(omp_for_vie2),phonontype(phonontype),bath_low(bath_low),bath_high(bath_high),gC_bath(gC_bath),gV_bath(gV_bath),migdal(migdal),gBATH(gBATH),omegaBATH(omegaBATH){};
 
 double get_wall_time(){
     struct timeval time;
@@ -54,7 +54,7 @@ int main(int argc,char *argv[]){
 	int tid,ntasks,ntau,nt,itermax,iter_rtime,omp_for_vie2,kt,nk,tstp=-2,iter,print_k,outputfrequency,size=2;
 	int restart_time,cont,use_rpa=true;
 	bool test,update;
-	double mu,beta,h,errmax,errmax_rtime,err,v01,v01_time,mazza,epsilon,mix,gamma,den;
+	double mu,beta,h,errmax,errmax_rtime,err,v01,v01_time,mazza,mix,den;
 	double wtime_limit,wtime_start,wtime_end,xi,dipolRe,dipolIm,eta;
 	std::vector<double> U,V,tt,delta,E,gVec,omega0Vec,gBATH,omegaBATH;
 	approx<lattice_1d_2b_optical_nofield_abinitio> *lattice;
@@ -125,8 +125,6 @@ int main(int argc,char *argv[]){
 		find_param_tvector(argv[1],"__E=",E,nt);
 		find_param(argv[1],"__dipolRe=",dipolRe);
 		find_param(argv[1],"__dipolIm=",dipolIm);
-		find_param(argv[1],"__gamma=",gamma);
-		find_param(argv[1],"__epsilon=",epsilon);
 		find_param(argv[1],"__om0=",om0);
 		find_param(argv[1],"__migdal=",migdal);
 		find_param(argv[1],"__s=",s);
@@ -167,7 +165,7 @@ int main(int argc,char *argv[]){
 	}
 
 	std::cout << den << std::endl;
-	parameters param(nt,kt,nk,ntau,size,beta,h,mu,den,epsilon,xi,delta,v01,v01_time,tt,U,V,omega0,g,E,dipolRe,dipolIm,ratio,fieldP,fieldD,mazza,update,eta,gamma,mix,test,(omp_for_vie2==1 ? true : false),phonontype,bath_low,bath_high,gC_bath,gV_bath,migdal,gBATH,omegaBATH);
+	parameters param(nt,kt,nk,ntau,size,beta,h,mu,den,xi,delta,v01,v01_time,tt,U,V,omega0,g,E,dipolRe,dipolIm,ratio,fieldP,fieldD,mazza,update,eta,mix,test,(omp_for_vie2==1 ? true : false),phonontype,bath_low,bath_high,gC_bath,gV_bath,migdal,gBATH,omegaBATH);
 
 	lattice=new mpi_lattice_step_2b_optical<lattice_1d_2b_optical_nofield_abinitio>(param);
 
