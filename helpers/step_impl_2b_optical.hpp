@@ -46,9 +46,17 @@ mpi_lattice_step_2b_optical<LATTICE>::mpi_lattice_step_2b_optical(parameters &pa
 	migdal_=param.migdal;
 	phonontype_=param.phonontype;
 
-	// Set fermionics bath 
+/*  Archived fermionic-reservoir bath construction.
+	
+	It builds the diagonal hybridization self-energy
+	Bath_a(t,t') = g_a(t) g^0_{bath,a}(t,t') g_a(t')
+	for a conduction reservoir in [bath_low, bath_high] and a valence
+	reservoir in [-bath_high, -bath_low].  It was disabled because Bath_
+	was never inserted into the Dyson equation.  To reactivate it, restore
+	Bath_ in step_decl.hpp, restore bath_low/bath_high/gC_bath/gV_bath in
+	parameters and input parsing, and add Bath_ explicitly to the electronic
+	self-energy used by kpoint_green::step_dyson.
 	Bath_=GREEN(nt_,ntau_,2,-1);
-	// First bath for the conducting band
 	GREEN Bathtmp(nt_,ntau_,1,-1);
 	CFUNC gtmp(param.nt,1);
 	cntr::smooth_box dos1(param.bath_low,param.bath_high,30);
@@ -57,7 +65,6 @@ mpi_lattice_step_2b_optical<LATTICE>::mpi_lattice_step_2b_optical(parameters &pa
     	cdmatrix tmp(1,1);
     	tmp(0,0)=param.gC_bath[tstp+1];
     	gtmp.set_value(tstp,tmp);
-    	// std::cout << tstp << " " << param.gC_bath[tstp+1] << " " << param.gV_bath[tstp+1] << std::endl;
     }
     for(int tstp=-1;tstp<=nt_;tstp++){
     	Bathtmp.right_multiply(tstp,gtmp);
@@ -65,7 +72,6 @@ mpi_lattice_step_2b_optical<LATTICE>::mpi_lattice_step_2b_optical(parameters &pa
     }
     Bath_.set_matrixelement(1,1,Bathtmp,0,0);
 
-    // For valence band
     Bathtmp.clear();
     gtmp.set_zero();
     cntr::smooth_box dos2(-param.bath_high,-param.bath_low,30);
@@ -74,14 +80,13 @@ mpi_lattice_step_2b_optical<LATTICE>::mpi_lattice_step_2b_optical(parameters &pa
     	cdmatrix tmp(1,1);
     	tmp(0,0)=param.gV_bath[tstp+1];
     	gtmp.set_value(tstp,tmp);
-    	// std::cout << tstp << " " << param.gC_bath[tstp+1] << " " << param.gV_bath[tstp+1] << std::endl;
     }
-    
     for(int tstp=-1;tstp<=nt_;tstp++){
     	Bathtmp.right_multiply(tstp,gtmp);
     	Bathtmp.left_multiply(tstp,gtmp);
 	}
 	Bath_.set_matrixelement(0,0,Bathtmp,0,0);
+*/
 
 	// Set holstein like bath
 	// std::cout << "step 5" << param.omegaBATH[0] <<  std::endl;
@@ -113,12 +118,6 @@ mpi_lattice_step_2b_optical<LATTICE>::mpi_lattice_step_2b_optical(parameters &pa
 	// std::cout << "step 6 " << std::endl;
 	init_G_mat_nointeraction();
 	
-	// Print Bath
-	// hid_t file_id = open_hdf5_file("bath.h5");
- //    hid_t group_id1 = create_group(file_id, "Bath");
- //    store_herm_greens_function(group_id1, Bath_);
- //    close_group(group_id1);
- //    close_hdf5_file(file_id);
 }
 
 

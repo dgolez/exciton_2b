@@ -21,9 +21,9 @@ using namespace std;
 #include <time.h>
 #include <sys/time.h>
 
-parameters::parameters(int nt,int kt,int nk,int ntau,int size,double beta,double h,double mu,double den, double xi,std::vector<double> &delta,double v01,double v01_time,std::vector<double> &tt,std::vector<double> &U,std::vector<double> &V,CFUNC &omega0,CFUNC &g,std::vector<double> &E,double dipolRe,double dipolIm,double fieldP,double fieldD,double mazza,bool update,double eta,double mix,bool test,int omp_for_vie2,int phonontype,double bath_low,double bath_high,std::vector<double> &gC_bath,std::vector<double> &gV_bath,int migdal,std::vector<double> &gBATH,std::vector<double> &omegaBATH):
+parameters::parameters(int nt,int kt,int nk,int ntau,int size,double beta,double h,double mu,double den, double xi,std::vector<double> &delta,double v01,double v01_time,std::vector<double> &tt,std::vector<double> &U,std::vector<double> &V,CFUNC &omega0,CFUNC &g,std::vector<double> &E,double dipolRe,double dipolIm,double fieldP,double fieldD,double mazza,bool update,double eta,double mix,bool test,int omp_for_vie2,int phonontype,int migdal,std::vector<double> &gBATH,std::vector<double> &omegaBATH):
 		nt(nt), ntau(ntau), size(size), nk(nk), kt(kt), beta(beta), h(h), mu(mu), den(den),xi(xi),delta(delta),v01(v01),v01_time(v01_time),
-		tt(tt),U(U),V(V),omega0(omega0),g(g),E(E),dipol(dipolRe,dipolIm),fieldP(fieldP),fieldD(fieldD),mazza(mazza),update(update),eta(eta),mix(mix),test(test),omp_for_vie2(omp_for_vie2),phonontype(phonontype),bath_low(bath_low),bath_high(bath_high),gC_bath(gC_bath),gV_bath(gV_bath),migdal(migdal),gBATH(gBATH),omegaBATH(omegaBATH){};
+		tt(tt),U(U),V(V),omega0(omega0),g(g),E(E),dipol(dipolRe,dipolIm),fieldP(fieldP),fieldD(fieldD),mazza(mazza),update(update),eta(eta),mix(mix),test(test),omp_for_vie2(omp_for_vie2),phonontype(phonontype),migdal(migdal),gBATH(gBATH),omegaBATH(omegaBATH){};
 
 double get_wall_time(){
     struct timeval time;
@@ -60,9 +60,6 @@ int main(int argc,char *argv[]){
 	approx<lattice_1d_2b_optical_nofield_abinitio> *lattice;
 	int migdal;
 	double fieldD,fieldP,phonontype;
-	//Bath parameters
-	double bath_low,bath_high;
-	std::vector<double> gC_bath,gV_bath;
 	
 	// (I) MPI initialization ... uses MPI over kpoints with one omp task per rank
 	{
@@ -127,12 +124,7 @@ int main(int argc,char *argv[]){
 		find_param(argv[1],"__dipolIm=",dipolIm);
 		find_param(argv[1],"__migdal=",migdal);
 
-		// Add bath fermions
-      	find_param(argv[1], "__bath_low=", bath_low);
-      	find_param(argv[1], "__bath_high=", bath_high);
-      	find_param_tvector(argv[1],"__gC_bath=",gC_bath,nt);
-      	find_param_tvector(argv[1],"__gV_bath=",gV_bath,nt);
-      	// Add bath Holstein like phonons
+		// Add bath Holstein-like phonons
       	find_param_tvector(argv[1],"__gBATH=",gBATH,nt);
 		find_param_tvector(argv[1],"__omegaBATH=",omegaBATH,nt);
 
@@ -161,7 +153,7 @@ int main(int argc,char *argv[]){
 	}
 
 	std::cout << den << std::endl;
-	parameters param(nt,kt,nk,ntau,size,beta,h,mu,den,xi,delta,v01,v01_time,tt,U,V,omega0,g,E,dipolRe,dipolIm,fieldP,fieldD,mazza,update,eta,mix,test,(omp_for_vie2==1 ? true : false),phonontype,bath_low,bath_high,gC_bath,gV_bath,migdal,gBATH,omegaBATH);
+	parameters param(nt,kt,nk,ntau,size,beta,h,mu,den,xi,delta,v01,v01_time,tt,U,V,omega0,g,E,dipolRe,dipolIm,fieldP,fieldD,mazza,update,eta,mix,test,(omp_for_vie2==1 ? true : false),phonontype,migdal,gBATH,omegaBATH);
 
 	lattice=new mpi_lattice_step_2b_optical<lattice_1d_2b_optical_nofield_abinitio>(param);
 

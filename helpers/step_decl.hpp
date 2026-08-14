@@ -178,7 +178,7 @@ public:
 	cntr::distributed_timestep_array<double>  gk_all_timesteps_;  //Timestep of all k dependent Green's functions in array
 	cntr::distributed_timestep_array<double>  wk_all_timesteps_;
 	cntr::distributed_timestep_array<double>  dk_all_timesteps_;
-	GREEN Gloc_,Wloc_,Dloc_,Bath_,D0loc_,D0hol_;
+	GREEN Gloc_,Wloc_,Dloc_,D0loc_,D0hol_;
 	CFUNC g_;
 	/// kk-dependent observables, to be collected at rank tid_root_
 	bool test_;
