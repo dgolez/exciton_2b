@@ -47,7 +47,7 @@ template <class LATTICE> class approx{
 	std::vector<kpoint_density<LATTICE> >  density_k_;
 	std::vector<CFUNC> vertex_;
 	cntr::distributed_array<double> convergence_error_;
-	double beta_,epsilon_;
+	double beta_;
 	double h_;
 	std::vector<cdmatrix> rk_,sh_,sf_,s2rk_;
 	CFUNC rho_loc_,rho_sym_,X_,Pi_,order_;
@@ -61,7 +61,7 @@ template <class LATTICE> class approx{
 	// Phonons
 	// boost::numeric::odeint::runge_kutta4< std::vector<double> > stepper_;
 
-	virtual double step(int tstp,int iter,int kt,double om0,double s,double amp)=0;
+	virtual double step(int tstp,int iter,int kt)=0;
 	// virtual double density_matrix(int tstp,cdmatrix density)=0;
 	virtual double get_ekin(int tstp)=0;
 	virtual void   get_ekin(int tstp,cdmatrix &ekin)=0;
@@ -83,7 +83,6 @@ public:
 	using approx<LATTICE>::vertex_;
 	using approx<LATTICE>::convergence_error_;
 	using approx<LATTICE>::beta_;
-	using approx<LATTICE>::epsilon_;
 	using approx<LATTICE>::h_;
 	using approx<LATTICE>::rk_;
 	using approx<LATTICE>::sh_;
@@ -114,7 +113,6 @@ public:
 	/////////////////////////////////////////////////////////
 	// before this, latt_ must be initialized !!
   	mpi_lattice_step_optical(parameters &param);
-	// void init(int nt,int ntau,int size,double beta,double h,bool use_omp_for_vie2,double mu,double epsilon);
 	void get_Sigma_Hartree_electronic(int tstp,cdmatrix &S);
 	void get_Sigma_phonon_mean_field(int tstp,cdmatrix &S);
 	void get_Sigma_Hartree(int tstp,CFUNC &S);
@@ -131,15 +129,14 @@ public:
         double get_dip(int tstp);
 	double get_curr_dip(int tstp);
   double get_curr_peierls(int tstp);
-  std::complex<double> get_optical0(CFUNC &optics,double domega,int nomega,double om0,double s,double amp);
-  std::complex<double> get_chi0(double omega,int mu,int nu,double om0,double s,double amp);
+  std::complex<double> get_optical0(CFUNC &optics,double domega,int nomega);
+  std::complex<double> get_chi0(double omega,int mu,int nu);
   std::complex<double> get_seebeck(CFUNC &seebeck,CFUNC &omega,double domega,int nomega);
   double get_seebeck_boltzmann(double beta);
   double dfermi(double omega,double beta);
   std::complex<double> get_dos(CFUNC &dos,double domega,int nomega);
-  double gauss(double om,double om0,double s);
 
-	virtual double step(int tstp,int iter,int kt,double om0,double s,double amp) override;
+	virtual double step(int tstp,int iter,int kt) override;
 	virtual void read_from_file_hdf5(int tstp,const char *filename_prefix,int kt) override;
 	virtual void print_to_file_hdf5(const char *filename_prefix,int print_k);
 	virtual void print_to_file_hdf5_slice(const char *filename_prefix,int outputfrequency,int print_k);
@@ -159,7 +156,6 @@ public:
 	using approx<LATTICE>::vertex_;
 	using approx<LATTICE>::convergence_error_;
 	using approx<LATTICE>::beta_;
-	using approx<LATTICE>::epsilon_;
 	using approx<LATTICE>::h_;
 	using approx<LATTICE>::rk_;
 	using approx<LATTICE>::sh_;
@@ -214,7 +210,7 @@ public:
 	void gather_kk_observables(int tstp, int kt);
 	double get_eneRPA(int tstp,int kt);
 
-	virtual double step(int tstp,int iter,int kt,double om0,double s,double amp) override;
+	virtual double step(int tstp,int iter,int kt) override;
 	virtual void read_from_file_hdf5(int tstp,const char *filename_prefix,int kt) override;
 	virtual void print_to_file_hdf5(const char *filename_prefix,int print_k);
 	virtual void print_to_file_hdf5_slice(const char *filename_prefix,int outputfrequency,int print_k);

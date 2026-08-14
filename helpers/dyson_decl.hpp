@@ -26,20 +26,18 @@
 template <class LATTICE> class kpoint_density{
 public:
 	kpoint_density(void);
-	kpoint_density(int nt,int ntau,int size,double beta,double h,double kk,LATTICE &latt,double mu,double den,double epsilon,double gamma=0.0,double mix=0.0,int phonontype=0);
+	kpoint_density(int nt,int ntau,int size,double beta,double h,double kk,LATTICE &latt,double mu,double den,double mix=0.0,int phonontype=0);
 	//////////////////////////////////////////////////////////////////////////////////////////
 	// OMP parallelization: (parellel solution of RPA integral equations)
 	// must be switched on explicitly !!
 	
 	void init_rho_free(LATTICE &latt);
 	void use_omp(bool onoff);
-	void init(int nt,int ntau,int size,double beta,double h,double kk,LATTICE &latt,double mu,double den,double epsilon);
 	void init_G_mat_nointeraction(LATTICE &latt);
 	void set_hk(int tstp,int iter,LATTICE &latt);
 	void set_vertex(int tstp,LATTICE &latt);
-	void step_dyson(int tstp,int iter,LATTICE &latt,double om0=0.0,double s=0.0,double amp=0.0);
-	double step_dyson_with_error(int tstp,int iter,LATTICE &latt,double om0=0.0,double s=0.0,double amp=0.0);
-	double gauss(double om,double om0,double s);
+	void step_dyson(int tstp,int iter,LATTICE &latt);
+	double step_dyson_with_error(int tstp,int iter,LATTICE &latt);
 	double heaviside(double ene);
 	void write_to_hdf5(hid_t group_id);
 	void write_to_hdf5(const char *filename);
@@ -55,8 +53,6 @@ public:
 	cdmatrix rho_eq_;
 	double mu_,den_;
 	double kk_;
-	double gamma_;
-	double epsilon_;
 	bool use_omp_;
 	double mix_;
 	int phonontype_;
@@ -73,14 +69,13 @@ public:
 	int migdal_;
 	double mu_;
 	double kk_;
-	double epsilon_;
 	double mix_;
 	bool use_omp_;
 	CFUNC gph_;
 	GREEN G_,G0_,G0Sigma_,SigmaG0_,Sigma_,chi_,P_,VP_,PV_,W_,D0_,D_,Pph_,D0Pph_,PphD0_;
 	
 	kpoint_green(void);
-    kpoint_green(int nt,int ntau,int size,double beta,double h,double kk,LATTICE &latt,double mu,double epsilon,CFUNC &omega,CFUNC &g,double mix,int migdal=0);
+    kpoint_green(int nt,int ntau,int size,double beta,double h,double kk,LATTICE &latt,double mu,CFUNC &omega,CFUNC &g,double mix,int migdal=0);
 	void use_omp(bool onoff);
 	void get_Density_matrix(int tstp,kpoint_density<LATTICE> &density);
 	void step_chi(int tstp,int kt,LATTICE &latt,kpoint_density<LATTICE> & density);
@@ -91,7 +86,6 @@ public:
 	double step_dyson_with_error(int tstp,int iter,int kt,LATTICE &latt,kpoint_density<LATTICE> &density);
 	void step_dyson_integral(int tstp,int iter,int kt,LATTICE &latt,kpoint_density<LATTICE> &density);
 	double step_dyson_with_error_integral(int tstp,int iter,int kt,LATTICE &latt,kpoint_density<LATTICE> &density);
-	void init(int nt,int ntau,int size,double beta,double h,double kk,LATTICE &latt,double mu,double epsilon);
 	void init_G_mat_nointeraction(LATTICE &latt,kpoint_density<LATTICE> & density,int kt);
 	// Reading/printing
 	// void read_from_file(int nt1,const char *folder,const char *suffix,LATTICE &latt);

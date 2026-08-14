@@ -8,7 +8,6 @@ using namespace std::chrono;
 template <class LATTICE>
 mpi_lattice_step_optical<LATTICE>::mpi_lattice_step_optical(parameters &param){
 	param_=param;
-	epsilon_=param.epsilon;
 	nt_=param.nt;
 	ntau_=param.ntau;
 	beta_=param.beta;
@@ -48,7 +47,7 @@ mpi_lattice_step_optical<LATTICE>::mpi_lattice_step_optical(parameters &param){
 	// // std::cout << "Init MF 1"<< std::endl;
 	// /////////////////////////////////////////////////
 	for(int k=0;k<nk_;k++){
-		density_k_[k]=kpoint_density<LATTICE>(nt_,ntau_,param.size,beta_,h_,latt_.kpoints_[k],latt_,param.mu,param.den,param.epsilon,param.gamma,param.mix,param.phonontype);
+		density_k_[k]=kpoint_density<LATTICE>(nt_,ntau_,param.size,beta_,h_,latt_.kpoints_[k],latt_,param.mu,param.den,param.mix,param.phonontype);
 	  	// set the vertex at *every* kk
 	  	vertex_[k]=CFUNC(nt_,nrpa_);
 	  	for(int tstp=-1;tstp<=nt_;tstp++){
@@ -63,7 +62,7 @@ mpi_lattice_step_optical<LATTICE>::mpi_lattice_step_optical(parameters &param){
 }
 
 template <class LATTICE>
-double mpi_lattice_step_optical<LATTICE>::step(int tstp,int iter,int kt,double om0,double s,double amp){
+double mpi_lattice_step_optical<LATTICE>::step(int tstp,int iter,int kt){
   assert(tstp<=nt_);
   int n;
   int n1=(tstp==-1 || tstp>kt ? tstp : 0);
@@ -90,7 +89,7 @@ double mpi_lattice_step_optical<LATTICE>::step(int tstp,int iter,int kt,double o
     // std::cout <<  "SigmaF "   << n << " " << this->density_k_[k].kk_ << " " << tmp << std::endl;
   }
   double err=0.0;
-  for(int k=0;k<nk_;k++) err += density_k_[k].step_dyson_with_error(tstp,iter,latt_,om0,s,amp);
+  for(int k=0;k<nk_;k++) err += density_k_[k].step_dyson_with_error(tstp,iter,latt_);
   //Symmetrize  the solutions
   // std::cout <<"Before sym " << err <<std::endl;
   for(int k=0;k<nk_;k++){
@@ -469,7 +468,7 @@ double mpi_lattice_step_optical<LATTICE>::get_dip(int tstp){
 }
 
 template <class LATTICE>
-std::complex<double> mpi_lattice_step_optical<LATTICE>::get_chi0(double omega,int mu,int nu,double om0,double s,double amp){
+std::complex<double> mpi_lattice_step_optical<LATTICE>::get_chi0(double omega,int mu,int nu){
   cdmatrix rtmp(2,2),tmp(2,2);
   std::complex<double> optical0=std::complex<double>(0.0,0.0);
   std::vector<cdmatrix> sigma(4);
@@ -508,8 +507,8 @@ std::complex<double> mpi_lattice_step_optical<LATTICE>::get_chi0(double omega,in
       bk(2)=std::real(rtmp(1,1));
       wp=0.5*(sigma[0]+(bk(0)*sigma[1]+bk(1)*sigma[2]+bk(2)*sigma[3])/bk.norm());
       wm=0.5*(sigma[0]-(bk(0)*sigma[1]+bk(1)*sigma[2]+bk(2)*sigma[3])/bk.norm());
-      double f1=cntr::fermi<double>(beta_,ek(1))+amp*gauss(ek(1),om0,s)-amp*gauss(ek(1),-om0,s);
-      double f0=cntr::fermi<double>(beta_,ek(0))+amp*gauss(ek(0),om0,s)-amp*gauss(ek(0),-om0,s);
+      double f1=cntr::fermi<double>(beta_,ek(1));
+      double f0=cntr::fermi<double>(beta_,ek(0));
       //Sum +-
       tmp=sigma[nu]*wp*sigma[mu]*wm;
       //std::cout << "Values chi  " << " " <<  nu << " " << mu << " " << tmp.trace() << std::endl;
@@ -542,7 +541,7 @@ std::complex<double> mpi_lattice_step_optical<LATTICE>::get_chi0(double omega,in
 
 
 template <class LATTICE>
-std::complex<double> mpi_lattice_step_optical<LATTICE>::get_optical0(CFUNC &optics,double domega,int nomega,double om0,double s,double amp){
+std::complex<double> mpi_lattice_step_optical<LATTICE>::get_optical0(CFUNC &optics,double domega,int nomega){
   cdmatrix rtmp(2,2),tmp(2,2);
   std::complex<double> optical0=std::complex<double>(0.0,0.0);
   double om;
@@ -607,8 +606,8 @@ std::complex<double> mpi_lattice_step_optical<LATTICE>::get_optical0(CFUNC &opti
 				vmu=std::real(vk(1,1));
 	      		}
 
-	      		double f1=cntr::fermi<double>(beta_,ek(1))+amp*gauss(ek(1),om0,s)-amp*gauss(ek(1),-om0,s);
-	      		double f0=cntr::fermi<double>(beta_,ek(0))+amp*gauss(ek(0),om0,s)-amp*gauss(ek(0),-om0,s);
+	      		double f1=cntr::fermi<double>(beta_,ek(1));
+	      		double f0=cntr::fermi<double>(beta_,ek(0));
 	      		//Sum +-
 				tmp=vnu*vmu*sigma[nu]*wp*sigma[mu]*wm;
 	      		previous(mu,nu)+=wt*tmp.trace()*(f0-f1)/(om-(ek(1)-ek(0))+std::complex<double>(0,eta_));
@@ -751,11 +750,6 @@ double mpi_lattice_step_optical<LATTICE>::get_dAk(int tstp){
 	    MPI_Bcast(&vktmp,1,MPI_DOUBLE,tid_root_,MPI_COMM_WORLD);
 	#endif
 	return vk;
-}
-
-template <class LATTICE>
-double mpi_lattice_step_optical<LATTICE>::gauss(double om,double om0,double s){
-	return exp(-(om-om0)*(om-om0)/(2*s*s))/(sqrt(2*PI)*s);
 }
 
 template <class LATTICE>

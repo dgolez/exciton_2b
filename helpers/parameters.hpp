@@ -5,10 +5,10 @@
 class parameters{
 	public:
 		parameters(){};
-		parameters(int nt,int kt,int nk,int ntau,int size,double beta,double h,double mu,double den, double epsilon, double xi,std::vector<double> &delta,double v01,double v01_time,std::vector<double> &tt,std::vector<double> &U,std::vector<double> &V,CFUNC &omega0,CFUNC &g,std::vector<double> &E,double dipolRe,double dipolIm,double ratio,double fieldP,double fieldD,double mazza,bool update,double eta,double gamma,double mix,bool test,int omp_for_vie2,int phonontype,double bath_low,double bath_high,std::vector<double> &gC_bath,std::vector<double> &gV_bath,int migdal,std::vector<double> &gBATH,std::vector<double> &omegaBATH);
+		parameters(int nt,int kt,int nk,int ntau,int size,double beta,double h,double mu,double den, double xi,std::vector<double> &delta,double v01,double v01_time,std::vector<double> &tt,std::vector<double> &U,std::vector<double> &V,CFUNC &omega0,CFUNC &g,std::vector<double> &E,double dipolRe,double dipolIm,double ratio,double fieldP,double fieldD,double mazza,bool update,double eta,double mix,bool test,int omp_for_vie2,int phonontype,double bath_low,double bath_high,std::vector<double> &gC_bath,std::vector<double> &gV_bath,int migdal,std::vector<double> &gBATH,std::vector<double> &omegaBATH);
 
 	int nt,ntau,size,nk,kt,omp_for_vie2,phonontype,migdal;
-	double beta,h,mu,den,epsilon,xi,v01,v01_time,ratio,fieldP,fieldD,mazza,eta,gamma,mix;
+		double beta,h,mu,den,xi,v01,v01_time,ratio,fieldP,fieldD,mazza,eta,mix;
 	double bath_low,bath_high;
 	std::vector<double> gC_bath,gV_bath;
 	std::vector<double> gBATH,omegaBATH;

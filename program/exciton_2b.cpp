@@ -59,7 +59,7 @@ int main(int argc,char *argv[]){
 	std::vector<double> U,V,tt,delta,E,gVec,omega0Vec,gBATH,omegaBATH;
 	approx<lattice_1d_2b_optical_nofield_abinitio> *lattice;
 	int migdal;
-	double om0,s,amp,fieldD,fieldP,ratio,phonontype;
+	double fieldD,fieldP,ratio,phonontype;
 	//Bath parameters
 	double bath_low,bath_high;
 	std::vector<double> gC_bath,gV_bath;
@@ -125,10 +125,7 @@ int main(int argc,char *argv[]){
 		find_param_tvector(argv[1],"__E=",E,nt);
 		find_param(argv[1],"__dipolRe=",dipolRe);
 		find_param(argv[1],"__dipolIm=",dipolIm);
-		find_param(argv[1],"__om0=",om0);
 		find_param(argv[1],"__migdal=",migdal);
-		find_param(argv[1],"__s=",s);
-		find_param(argv[1],"__amp=",amp);
 		find_param(argv[1],"__ratio=",ratio); //Ratio  of masses
 
 		// Add bath fermions
@@ -213,7 +210,7 @@ int main(int argc,char *argv[]){
 
 		// if(tstp>0) lattice->
 		for(iter=1;iter<=itermax1;iter++){
-		  err=lattice->step(tstp,iter,kt,om0,s,amp); /// should work at time zero!
+		  err=lattice->step(tstp,iter,kt); /// should work at time zero!
 		  if(tid==0){
 		  	cdmatrix tmp(2,2),tmpsym(2,2),ord(1,1);
 		  	lattice->rho_loc_.get_value(tstp,tmp);

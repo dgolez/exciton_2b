@@ -7,9 +7,9 @@ kpoint_density<LATTICE>::kpoint_density(void){
 }
 
 template <class LATTICE>
-kpoint_density<LATTICE>::kpoint_density(int nt,int ntau,int size,double beta,double h,double kk,LATTICE &latt,double mu,double den,double epsilon,double gamma,double mix,int phonontype):
+kpoint_density<LATTICE>::kpoint_density(int nt,int ntau,int size,double beta,double h,double kk,LATTICE &latt,double mu,double den,double mix,int phonontype):
 	beta_(beta), h_(h), nt_(nt), ntau_(ntau),
-	nrpa_(size),mu_(mu),den_(den),epsilon_(epsilon),phonontype_(phonontype){
+		nrpa_(size),mu_(mu),den_(den),phonontype_(phonontype){
 		SHartree_=CFUNC(nt_,nrpa_);
 		SFock_=CFUNC(nt_,nrpa_);
 		rho_=CFUNC(nt_,nrpa_);
@@ -20,7 +20,6 @@ kpoint_density<LATTICE>::kpoint_density(int nt,int ntau,int size,double beta,dou
 		hkeff_eigen_=CFUNC(nt_,nrpa_);
 		vertex_=CFUNC(nt_,nrpa_);
 		eigen_vec_=CFUNC(nt_,nrpa_);
-		gamma_=gamma;
 		mix_= mix;
 		use_omp(false);
 		kk_=kk;
@@ -40,11 +39,6 @@ void kpoint_density<LATTICE>::use_omp(bool onoff){
 		std::cerr << __PRETTY_FUNCTION__<< ":\n OMP not allowed " << std::endl;
 		exit(0);
 	#endif
-}
-
-template <class LATTICE>
-double kpoint_density<LATTICE>::gauss(double om,double om0,double s){
-	return exp(-(om-om0)*(om-om0)/(2*s*s))/(sqrt(2*PI)*s);
 }
 
 template <class LATTICE>
@@ -86,9 +80,9 @@ kpoint_green<LATTICE>::kpoint_green(void){
 }
 
 template <class LATTICE>
-kpoint_green<LATTICE>::kpoint_green(int nt,int ntau,int size,double beta,double h,double kk,LATTICE &latt,double mu,double epsilon,CFUNC &omega, CFUNC &g,double mix,int migdal):
+kpoint_green<LATTICE>::kpoint_green(int nt,int ntau,int size,double beta,double h,double kk,LATTICE &latt,double mu,CFUNC &omega, CFUNC &g,double mix,int migdal):
 	beta_(beta), h_(h), nt_(nt), ntau_(ntau), kk_(kk),
-	nrpa_(size),mu_(mu),epsilon_(epsilon){
+		nrpa_(size),mu_(mu){
 	Sigma_=GREEN(nt_,ntau_,nrpa_,-1);
 	G_=GREEN(nt_,ntau_,nrpa_,-1);
 	G0_=GREEN(nt_,ntau_,nrpa_,-1);
@@ -191,7 +185,7 @@ U(t+dt,t) = exp( -ii dt (H(t+dt + H(t))/0.5) )
 */
 
 template <class LATTICE>
-void kpoint_density<LATTICE>::step_dyson(int tstp,int iter,LATTICE &latt,double om0,double s,double amp){
+void kpoint_density<LATTICE>::step_dyson(int tstp,int iter,LATTICE &latt){
 	if(tstp==-1){
 		cdmatrix hk,sh,sf,hkeff,rhok,hkeff_eigen,mu(nrpa_,nrpa_);
 		mu.setZero();
@@ -229,11 +223,7 @@ void kpoint_density<LATTICE>::step_dyson(int tstp,int iter,LATTICE &latt,double 
 		
 		rho_.get_value(-1,rtmpOLD);
 		// std::cout << "Density " << den_ << " " << mu_ << std::endl;
-		if(iter<20){
-	  		for(int i=0;i<nrpa_;i++) fk(i,i)=cntr::fermi<double>(beta_,ek(i)-mu_*den_);
-		}else{
-			for(int i=0;i<nrpa_;i++) fk(i,i)=cntr::fermi<double>(beta_,ek(i)-mu_*den_+amp*gauss(ek(i),om0,s)-amp*gauss(ek(i),-om0,s));
-		}
+		for(int i=0;i<nrpa_;i++) fk(i,i)=cntr::fermi<double>(beta_,ek(i)-mu_*den_);
 
 		// std::cout <<  "rhok " <<tstp << " " << iter << " " << kk_ << " " << vec*fk*vec.adjoint() << " " << fk <<std::endl;
 
@@ -251,10 +241,7 @@ void kpoint_density<LATTICE>::step_dyson(int tstp,int iter,LATTICE &latt,double 
 		rho_.get_value(-1,rtmp);
 		// TODO: Add the initial condition change for general matrix
 		// At the moment I don't know how to do this in general case - example for excitonic two band semiconductor
-		rtmpout(0,0)=(rtmp(0,0)+I*epsilon_*(rtmp(1,0)-rtmp(0,1))+epsilon_*epsilon_*rtmp(1,1))/(1.0+epsilon_*epsilon_);
-		rtmpout(1,0)=(I*epsilon_*(rtmp(0,0)-rtmp(1,1))+epsilon_*epsilon_*rtmp(0,1)+rtmp(1,0))/(1.0+epsilon_*epsilon_);
-		rtmpout(0,1)=(I*epsilon_*(rtmp(1,1)-rtmp(0,0))+epsilon_*epsilon_*rtmp(1,0)+rtmp(0,1))/(1.0+epsilon_*epsilon_);
-		rtmpout(1,1)=(rtmp(1,1)+I*epsilon_*(rtmp(0,1)-rtmp(1,0))+epsilon_*epsilon_*rtmp(0,0))/(1.0+epsilon_*epsilon_);
+		rtmpout=rtmp;
 		rho_.set_value(0,rtmpout);
 		// std::cout << "rho in " << rtmp <<  std::endl;
 
@@ -335,13 +322,12 @@ void kpoint_density<LATTICE>::step_dyson(int tstp,int iter,LATTICE &latt,double 
 			
 		rho_.get_value(tstp-1,rho0);
 		
-		rtmp=uk*rho0*uk.adjoint()-gamma_*h_*(rho0-rho_eq_);
+		rtmp=uk*rho0*uk.adjoint();
 
 		rho_.set_value(tstp,rtmp);
 		// rhotmp=vec.adjoint()*rtmp*vec;
 		
 		// TEST
-		// std::cout << "Rtmp: " << tstp << " " << gamma_ << " " <<  -gamma_*h_*(rho0-rho_eq_) << std::endl;
 		// std::cout << "eigenvalues" << vec.adjoint()*hkeff*vec  << std::endl;
 		// std::cout << "hkeff " << hkeff  << std::endl;
 		// std::cout << "hkeig " << ek(0) << " " << ek(1)  << std::endl;
@@ -351,10 +337,10 @@ void kpoint_density<LATTICE>::step_dyson(int tstp,int iter,LATTICE &latt,double 
 
 
 template <class LATTICE>
-double kpoint_density<LATTICE>::step_dyson_with_error(int tstp,int iter,LATTICE &latt,double om0,double s,double amp){
+double kpoint_density<LATTICE>::step_dyson_with_error(int tstp,int iter,LATTICE &latt){
 	cdmatrix rtmp,rtmp1,dr;
 	rho_.get_value(tstp,rtmp);
-	step_dyson(tstp,iter,latt,om0,s,amp);
+	step_dyson(tstp,iter,latt);
 	rho_.get_value(tstp,rtmp1);
 	dr=rtmp1-rtmp;
 	// std::cout << "Error1a " << rtmp << std::endl;
@@ -554,7 +540,6 @@ void kpoint_green<LATTICE>::step_dyson(int tstp,int iter,int kt,LATTICE &latt, k
 		cntr::dyson_mat(G_,Sigma_,mu_,density.hkeff_,integration::I<double>(kt),beta_,0,true);
 	}else if (tstp==0){
 		cdmatrix tmp,tmp1,tmp2,rtmp(nrpa_,nrpa_),hkeff,hk,hktmp;
-		// TODO: Add epsilon to the initial condition to check the linear response
 	    cntr::set_t0_from_mat(G_);
 	    
 		

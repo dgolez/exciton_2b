@@ -19,7 +19,6 @@ mpi_lattice_step_2b_optical<LATTICE>::mpi_lattice_step_2b_optical(parameters &pa
 	assert(param.nt==latt_.nt_);
 	assert(0<=ntau_);
 	// std::cout << "step 3 " << std::endl;
-	// base_type::init(nt,ntau,size,beta,h,use_omp_for_vie2,mu,epsilon);
 	gk_all_timesteps_=cntr::distributed_timestep_array<double>(nk_,nt_,ntau_,nrpa_,-1,true);
 	wk_all_timesteps_=cntr::distributed_timestep_array<double>(nk_,nt_,ntau_,nrpa_,+1,true);
 	dk_all_timesteps_=cntr::distributed_timestep_array<double>(nk_,nt_,ntau_,1,+1,true);
@@ -107,7 +106,7 @@ mpi_lattice_step_2b_optical<LATTICE>::mpi_lattice_step_2b_optical(parameters &pa
 	/////////////////////////////////////////////////
 	for(int k=0;k<nk_;k++){
 	  if(this->tid_map_[k]==this->tid_){
-		this->green_k_[k]=kpoint_green<LATTICE>(nt_,ntau_,param.size,param.beta,param.h,latt_.kpoints_[k],latt_,param.mu,this->epsilon_,param.omega0,param.g,param.mix,param.migdal);
+		this->green_k_[k]=kpoint_green<LATTICE>(nt_,ntau_,param.size,param.beta,param.h,latt_.kpoints_[k],latt_,param.mu,param.omega0,param.g,param.mix,param.migdal);
 		this->green_k_[k].use_omp(use_omp_for_vie2_);
 	  }
 	}
@@ -195,7 +194,7 @@ void mpi_lattice_step_2b_optical<LATTICE>::symmetrise_mat(GREEN &G){
 // TODO: check if it is better to gather density from extrapolated Gk or from rho. I'd guess rho
 // TODO: CLEAN UP declaration of same variables in the base and this class
 template <class LATTICE>
-double mpi_lattice_step_2b_optical<LATTICE>::step(int tstp,int iter,int kt,double om0,double s,double amp){
+double mpi_lattice_step_2b_optical<LATTICE>::step(int tstp,int iter,int kt){
   // assert(tstp<=this->nt_-1);
 	double err;
 	int n;
