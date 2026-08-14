@@ -30,7 +30,6 @@ lattice_1d_2b_optical_nofield_abinitio::lattice_1d_2b_optical_nofield_abinitio(p
 	mu_=param.mu;
 	fieldD_=param.fieldD;
 	fieldP_=param.fieldP;
-	ratio_=param.ratio;
 	rho_eq_.resize(nrpa_,nrpa_);
 	
 	v01_[0]=param.v01; //Artificial symmetry breaking field only for equilibrium
@@ -227,21 +226,6 @@ void lattice_1d_2b_optical_nofield_abinitio::vk(cdmatrix &vkmatrix,int tstp,doub
 	vkmatrix(1,1)=vkNi;
 	vkmatrix(0,1)=vkMaz;
 	vkmatrix(1,0)=conj(vkMaz);
-}
-
-//Velocity is still 1d vector
-void lattice_1d_2b_optical_nofield_abinitio::vkFULL(cdmatrix &vkmatrix,int tstp,double kk){
-	// Diagonal terms
-	double kkshift=kk+A_[tstp+1]*fieldP_;
-	double vk=2.0*tt_[tstp+1]*sin(kkshift);
-	cdouble vD=8.0*std::complex<double>(1.0,0.0)*tt_[tstp+1]*dipol_*cos(kk);
-	// double vk=2.0*tt_[tstp+1]*sin(kk);
-	vkmatrix.resize(nrpa_,nrpa_);
-	vkmatrix.setZero();
-	vkmatrix(0,0)=-vk;
-	vkmatrix(1,1)=vk*ratio_;
-	vkmatrix(0,1)=vD;
-	vkmatrix(1,0)=std::conj(vD);
 }
 
 // Dipolar interaction

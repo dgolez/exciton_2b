@@ -318,7 +318,7 @@ public:
 	void hkfree(cdmatrix &hkmatrix,int tstp,double kk);
 	//Velocity is still 1d vector
 	void vk(cdmatrix &vkmatrix,int tstp,double kk);
-        void vkFULL(cdmatrix &vkmatrix,int tstp,double kk); //Peierls+Dipolar
+	void vkFULL(cdmatrix &vkmatrix,int tstp,double kk); //Peierls+Dipolar
 	// Dipolar interaction
 	void Ak(cdmatrix &hkmatrix,int tstp,double kk);
 
@@ -387,7 +387,6 @@ public:
 	std::vector<cdouble>  v01_; // exciton pair field
 	std::complex<double> dipol_;
 	cdmatrix rho_eq_;
-	double ratio_;
 
 	lattice_1d_2b_optical_nofield_abinitio(void);
 	lattice_1d_2b_optical_nofield_abinitio(parameters &param);
@@ -404,7 +403,6 @@ public:
 	void hkfree(cdmatrix &hkmatrix,int tstp,double kk);
 	//Velocity is still 1d vector
 	void vk(cdmatrix &vkmatrix,int tstp,double kk);
-        void vkFULL(cdmatrix &vkmatrix,int tstp,double kk); //Peierls+Dipolar
 	// Dipolar interaction
 	void Ak(cdmatrix &hkmatrix,int tstp,double kk);
 

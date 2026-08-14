@@ -539,7 +539,6 @@ std::complex<double> mpi_lattice_step_optical<LATTICE>::get_chi0(double omega,in
   //return vk;
 }
 
-
 template <class LATTICE>
 std::complex<double> mpi_lattice_step_optical<LATTICE>::get_optical0(CFUNC &optics,double domega,int nomega){
   cdmatrix rtmp(2,2),tmp(2,2);
@@ -576,7 +575,7 @@ std::complex<double> mpi_lattice_step_optical<LATTICE>::get_optical0(CFUNC &opti
     wp=0.5*(sigma[0]+(bk(0)*sigma[1]+bk(1)*sigma[2]+bk(2)*sigma[3])/bk.norm());
     wm=0.5*(sigma[0]-(bk(0)*sigma[1]+bk(1)*sigma[2]+bk(2)*sigma[3])/bk.norm());
 	//velocities
-    latt_.vkFULL(vk,-1,latt_.kpoints_[k]);
+    latt_.vk(vk,-1,latt_.kpoints_[k]);
     latt_.Ak(Ak,-1,latt_.kpoints_[k]);
 	double vnu,vmu;
 
@@ -645,7 +644,7 @@ std::complex<double> mpi_lattice_step_optical<LATTICE>::get_seebeck(CFUNC &seebe
       for(int i=0;i<nrpa_;i++) diatmp(i,i)=1.0/(om-ek(i)+std::complex<double>(0,eta_));
  	  G=vec*diatmp*vec.adjoint();
   	  G=(-1.0)*G.imag()/3.14159265358979323846; // this is single-particle spectral function A
-  	  latt_.vkFULL(vk,-1,latt_.kpoints_[k]);
+      latt_.vk(vk,-1,latt_.kpoints_[k]);
   	  tmp=vk*G*vk*G;
   	  seebeck.get_value(io,previous);
   	  previous(0,0)-=tmp.trace();
