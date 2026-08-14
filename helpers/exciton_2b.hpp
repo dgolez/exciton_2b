@@ -213,7 +213,7 @@ void lattice_1d_2b_optical_nofield_abinitio::hkfree(cdmatrix &hkmatrix,int tstp,
 //Velocity is still 1d vector
 void lattice_1d_2b_optical_nofield_abinitio::vk(cdmatrix &vkmatrix,int tstp,double kk){
 	// Diagonal terms
-	double kkshift=kk+A_[tstp+1];
+	double kkshift=kk+A_[tstp+1]*fieldP_;
 	double tTa=-0.72/0.3;
 	double tNi=1.0;
 
@@ -234,7 +234,7 @@ void lattice_1d_2b_optical_nofield_abinitio::vk(cdmatrix &vkmatrix,int tstp,doub
 //Velocity is still 1d vector
 void lattice_1d_2b_optical_nofield_abinitio::vkFULL(cdmatrix &vkmatrix,int tstp,double kk){
 	// Diagonal terms
-	double kkshift=kk+A_[tstp+1];
+	double kkshift=kk+A_[tstp+1]*fieldP_;
 	double vk=2.0*tt_[tstp+1]*sin(kkshift);
 	cdouble vD=8.0*std::complex<double>(1.0,0.0)*tt_[tstp+1]*dipol_*cos(kk);
 	// double vk=2.0*tt_[tstp+1]*sin(kk);
