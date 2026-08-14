@@ -107,7 +107,6 @@ public:
 	
 
 	bool update_;
-	int suscep_;
 	double eta_; //Broadening
 	double mazza_;
 	parameters param_;
@@ -218,4 +217,3 @@ public:
 	virtual void print_to_file_hdf5(const char *filename_prefix,int print_k);
 	virtual void print_to_file_hdf5_slice(const char *filename_prefix,int dt,int print_k);
 };
-

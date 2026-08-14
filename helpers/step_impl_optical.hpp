@@ -18,7 +18,6 @@ mpi_lattice_step_optical<LATTICE>::mpi_lattice_step_optical(parameters &param){
 	nk_=param.nk;
 	kt_=param.kt;
 	update_=param.update;
-	suscep_=param.suscep;
 	eta_=param.eta;
 	latt_=LATTICE(param);
 	density_k_.resize(nk_);
@@ -103,51 +102,6 @@ double mpi_lattice_step_optical<LATTICE>::step(int tstp,int iter,int kt,double o
   set_local(tstp);
   set_order(tstp);
   set_sym(tstp);
-  // Plot from [-2,2]
-  double domega=eta_/20.0;
-  int nomega=int(20.0/domega);
-
-  if(tstp==0 && iter==1 && suscep_){
-  	auto start = high_resolution_clock::now();
-    CFUNC optics(nomega*2+2,4); //This is not the how it should be used by eigen+ vector are tedious
-    CFUNC chi(nomega*2+2,4);
-    CFUNC seebeck(nomega*2+2,1);
-    CFUNC dos(nomega*2+2,1);
-    CFUNC omega(nomega*2+2,1);
-    cdmatrix tmpO(4,4),tmpC(4,4),tmpS(1,1),om(1,1),tmpA(1,1);
-    chi.set_zero();
-    optics.set_zero();
-    get_seebeck(seebeck,omega,domega,nomega);
-    get_dos(dos,domega,nomega);
-
-    // get_optical0(optics,domega,nomega,om0,s,amp);
- //    for(int i=0;i<2*nomega+2;i++){
- //    	tmpC.setZero();
- //    	for(int k=0;k<4;k++){
-	// 		for(int l=0;l<4;l++){
-	// 			tmpC(l,k)=get_chi0((i-nomega)*domega,k,l,om0,s,amp);
-	// 		}
-	// 	}
-	// 	chi.set_value(i,tmpC);
-	// }
-    	
-    // get_chi0(chi,domega,nomega,om0,s,amp);
-
-
-    hid_t file_id = open_hdf5_file("optical0.h5");
-    hid_t group_id = create_group(file_id, "opt");
-    //optics.write_to_hdf5(group_id,"opt");
-    chi.write_to_hdf5(group_id,"chi");
-    seebeck.write_to_hdf5(group_id,"seebeck");
-    dos.write_to_hdf5(group_id,"dos");
-    omega.write_to_hdf5(group_id,"om"); 
-    close_hdf5_file(file_id);
-    //abort();
-    //std::cout << "optical0: " << tmp[0] << std::endl; 
-    auto end = high_resolution_clock::now();
-    auto duration = duration_cast<microseconds>(end - start); 
-	std::cout << "time for susceptibility: " << duration.count()/1000000.0 << " s"   << std::endl;
-  }
   return err;		
 }
 
