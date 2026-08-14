@@ -117,7 +117,6 @@ public:
 	// void init(int nt,int ntau,int size,double beta,double h,bool use_omp_for_vie2,double mu,double epsilon);
 	void get_Sigma_Hartree_electronic(int tstp,cdmatrix &S);
 	void get_Sigma_phonon_mean_field(int tstp,cdmatrix &S);
-	void get_Sigma_Hartree_original(int tstp,CFUNC &S);
 	void get_Sigma_Hartree(int tstp,CFUNC &S);
 	void get_Sigma_Fock(int tstp,int kk,CFUNC &S);
 	void set_local(int tstp);
