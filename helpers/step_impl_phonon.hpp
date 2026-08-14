@@ -30,7 +30,7 @@ void phonon::step(int tstp,CFUNC &X,CFUNC &Pi,int kt,double h){
     cntr::extrapolate_timestep(tstp-1,X,integration::I<double>(kt));
     cntr::extrapolate_timestep(tstp-1,Pi,integration::I<double>(kt));
     X.get_value(tstp-1,tmp);
-    tmpX(0,0)=tmp(0,0)h*(251.0*dx1dt(tstp,Pi)+646.0*dx1dt(tstp-1,Pi)-264.0*dx1dt(tstp-2,Pi)+106.0*dx1dt(tstp-3,Pi)-19.0*dx1dt(tstp-4,Pi))/720.0;
+    tmpX(0,0)=tmp(0,0)+h*(251.0*dx1dt(tstp,Pi)+646.0*dx1dt(tstp-1,Pi)-264.0*dx1dt(tstp-2,Pi)+106.0*dx1dt(tstp-3,Pi)-19.0*dx1dt(tstp-4,Pi))/720.0;
     X.set_value(tstp,tmpX);
     Pi.get_value(tstp-1,tmp);
     tmpPi(0,0)=tmp(0,0)+h*(251.0*dx2dt(tstp,X)+646.0*dx2dt(tstp-1,X)-264.0*dx2dt(tstp-2,X)+106.0*dx2dt(tstp-3,X)-19.0*dx2dt(tstp-4,X))/720.0;
