@@ -13,7 +13,7 @@ phonon::phonon(CFUNC &omega0,CFUNC &g,CFUNC &density,int phonontype){
   phonontype_=phonontype;
 }
 
-void phonon::step(int tstp,CFUNC &X,CFUNC &Pi,int kt,double dt){
+void phonon::step(int tstp,CFUNC &X,CFUNC &Pi,int kt,double h){
   // Fix first 5 timesteps
   // std::cout << "phonon step " << tstp << " " << kt  << std::endl;
   if(0<=tstp && tstp <=kt){
@@ -30,10 +30,10 @@ void phonon::step(int tstp,CFUNC &X,CFUNC &Pi,int kt,double dt){
     cntr::extrapolate_timestep(tstp-1,X,integration::I<double>(kt));
     cntr::extrapolate_timestep(tstp-1,Pi,integration::I<double>(kt));
     X.get_value(tstp-1,tmp);
-    tmpX(0,0)=tmp(0,0)+dt*(251.0*dx1dt(tstp,Pi)+646.0*dx1dt(tstp-1,Pi)-264.0*dx1dt(tstp-2,Pi)+106.0*dx1dt(tstp-3,Pi)-19.0*dx1dt(tstp-4,Pi))/720.0;
+    tmpX(0,0)=tmp(0,0)h*(251.0*dx1dt(tstp,Pi)+646.0*dx1dt(tstp-1,Pi)-264.0*dx1dt(tstp-2,Pi)+106.0*dx1dt(tstp-3,Pi)-19.0*dx1dt(tstp-4,Pi))/720.0;
     X.set_value(tstp,tmpX);
     Pi.get_value(tstp-1,tmp);
-    tmpPi(0,0)=tmp(0,0)+dt*(251.0*dx2dt(tstp,X)+646.0*dx2dt(tstp-1,X)-264.0*dx2dt(tstp-2,X)+106.0*dx2dt(tstp-3,X)-19.0*dx2dt(tstp-4,X))/720.0;
+    tmpPi(0,0)=tmp(0,0)+h*(251.0*dx2dt(tstp,X)+646.0*dx2dt(tstp-1,X)-264.0*dx2dt(tstp-2,X)+106.0*dx2dt(tstp-3,X)-19.0*dx2dt(tstp-4,X))/720.0;
     Pi.set_value(tstp,tmpPi);
   }
 }
@@ -154,84 +154,3 @@ void phonon::matrixele(int i1,int i2,int &j1, int &j2,int nrpa){
 	// j2=(i2+1)%nrpa;
 	// std::cout << "Inside " << i1 <<" " << i2 <<" " << j1 << " " <<j2 <<std::endl;
 }
-
-// HOLSTEIN COUPLING
-
-// // Integrator for phonons - Holstein like interaction
-// phonon_hol::phonon_hol(void){
-// }
-
-// phonon_hol::phonon_hol(CFUNC &omega0,CFUNC &g,CFUNC &density){
-// 	omega0_=omega0;
-// 	g_=g;
-// 	density_=density;
-// }
-
-// void phonon_hol::step(int tstp,CFUNC &X,CFUNC &Pi,int kt,double dt){
-//   // Fix first 5 timesteps
-//   if(0<=tstp && tstp <=kt){
-//     cdmatrix tmpX,tmpPi;
-//     X.get_value(-1,tmpX);
-//     Pi.get_value(-1,tmpPi);
-//     X.set_value(tstp,tmpX);
-//     Pi.set_value(tstp,tmpPi);
-//   }else{
-//     //Adams-Moulton method
-//     cdmatrix  tmpPi(1,1),tmpX(1,1),tmp(1,1);
-//     cntr::extrapolate_timestep(tstp-1,X,integration::I<double>(kt));
-//     cntr::extrapolate_timestep(tstp-1,Pi,integration::I<double>(kt));
-//     X.get_value(tstp-1,tmp);
-//     tmpX(0,0)=tmp(0,0)+dt*(251.0*dx1dt(tstp,Pi)/720.0+646.0*dx1dt(tstp-1,Pi)/720.0-264.0*dx1dt(tstp-2,Pi)/720.0+106.0*dx1dt(tstp-3,Pi)-19.0*dx1dt(tstp-4,Pi)/720.0);
-//     X.set_value(tstp,tmpX);
-//     Pi.get_value(tstp-1,tmp);
-//     tmpPi(0,0)=tmp(0,0)+dt*(251.0*dx2dt(tstp,X)/720.0+646.0*dx2dt(tstp-1,X)/720.0-264.0*dx2dt(tstp-2,X)/720.0+106.0*dx2dt(tstp-3,X)-19.0*dx2dt(tstp-4,X)/720.0);
-//     Pi.set_value(tstp,tmpPi);
-//   }
-// }
-
-// double phonon_hol::dx1dt(int tstp,CFUNC &Pi){
-//   cdmatrix tmpom(1,1),tmpPi(1,1);
-//   omega0_.get_value(tstp,tmpom);
-//   Pi.get_value(tstp,tmpPi);
-//   return std::real(tmpom(0,0)*tmpPi(0,0));
-// }
-
-// double phonon_hol::dx2dt(int tstp,CFUNC &X){
-//   cdmatrix tmpom(1,1),tmpX(1,1),tmpG(1,1);
-//   cdmatrix tmprho(1,1);
-//   omega0_.get_value(tstp,tmpom);
-//   g_.get_value(tstp,tmpG);
-//   density_.get_value(tstp,tmprho);
-//   X.get_value(tstp,tmpX);
-//   return std::real(-tmpom(0,0)*tmpX(0,0)-2.0*tmpG(0,0)*std::real(tmprho.trace()));
-// }
-	
-
-// void phonon_hol::eq(CFUNC &X,CFUNC &Pi){
-//   cdmatrix tmpom(1,1),tmpX(1,1),tmpG(1,1);
-//   cdmatrix tmprho(1,1);
-//   cdmatrix Xtmp(1,1),Ptmp(1,1);
-
-//   omega0_.get_value(-1,tmpom);
-//   density_.get_value(-1,tmprho);
-//   g_.get_value(-1,tmpG);
-  
-//   Xtmp(0,0)=-2.0*tmpG(0,0)*(tmprho.trace()-1.0)/tmpom(0,0);	
-//   X.set_value(-1,Xtmp);
-//   Ptmp(0,0)=0.0;
-//   Pi.set_value(-1,Ptmp);
-// }
-
-// void phonon_hol::hartree(cdmatrix &inter,cdmatrix X){
-// 	// TODO: Extend to several orbitals case
-// 	// inter(0,0)=g_*X(0,0);
-// 	inter(0,0)=0.0; //Oky this is crap, but how should this be done properly: \sigma_H=(n-<n>) g <X>
-// }
-
-// void phonon_hol::rpa(int tstp,int nrpa, GREEN_TSTP &SigmaPh,cntr::herm_matrix_timestep_view<double> & G,cntr::herm_matrix_timestep_view<double> & D){
-// 	for(int i1=0;i1<nrpa;i1++){
-// 		for(int i2=0;i2<nrpa;i2++){
-// 			cntr::Bubble2(tstp,SigmaPh,i1,i2,G,G,i1,i2,D,D,0,0);
-// 		}
-// 	}
-// }
