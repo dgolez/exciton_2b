@@ -199,6 +199,8 @@ double mpi_lattice_step_2b_optical<LATTICE>::step(int tstp,int iter,int kt,doubl
   // assert(tstp<=this->nt_-1);
 	double err;
 	int n;
+	// if tstp equals -1 or is bigger than kt, both variables get the value of tstp
+	// if not, n1 gets 0 and n2 gets kt
 	int n1=(tstp==-1 || tstp>kt ? tstp : 0);
 	int n2=(tstp==-1 || tstp>kt ? tstp : kt);
 	if(tstp>0 && iter==1){
@@ -308,7 +310,7 @@ double mpi_lattice_step_2b_optical<LATTICE>::step(int tstp,int iter,int kt,doubl
 		for(int k=0;k<this->nk_;k++){
 			if(this->tid_map_[k]==this->tid_){
 				// std::cout <<"Before h" << std::endl;
-				base_type::get_Sigma_Hartree(n,k,this->density_k_[k].SHartree_);
+				base_type::get_Sigma_Hartree(n,this->density_k_[k].SHartree_);
 				this->density_k_[k].SHartree_.get_value(n,tmp);
 				// std::cout <<  "SigmaH "   << n << " " << this->density_k_[k].kk_ << " " << tmp << std::endl;
 				base_type::get_Sigma_Fock(n,k,this->density_k_[k].SFock_);

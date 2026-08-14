@@ -82,7 +82,7 @@ double mpi_lattice_step_optical<LATTICE>::step(int tstp,int iter,int kt,double o
   step_boson(tstp);
   for(int k=0;k<nk_;k++){
     cdmatrix tmp;
-    get_Sigma_Hartree(tstp,k,density_k_[k].SHartree_);
+    get_Sigma_Hartree(tstp,density_k_[k].SHartree_);
     density_k_[k].SHartree_.get_value(tstp,tmp);
     // std::cout <<  "SigmaH "   << n << " " << this->density_k_[k].kk_ << " " << tmp << std::endl;
     get_Sigma_Fock(tstp,k,density_k_[k].SFock_);
@@ -154,53 +154,71 @@ void mpi_lattice_step_optical<LATTICE>::step_boson(int tstp){
 }
 
 template <class LATTICE>
-void mpi_lattice_step_optical<LATTICE>::get_Sigma_Hartree(int tstp,int kk,CFUNC &S){
-	cdmatrix stmp(nrpa_,nrpa_),v0;
-	if(update_ || tstp<0){
-	// kk-independent, nut anyway
-	stmp.setZero();
-	//// the vertex V_{a1,a2} = vertex(q=0)_{a1,a2}
+void mpi_lattice_step_optical<LATTICE>::get_Sigma_Hartree_electronic(int tstp,cdmatrix &S){
+	S.setZero();
+	cdmatrix v0;
+	// The vertex V_{a1,a2} is vertex(q=0)_{a1,a2}.
 	vertex_[latt_.G_].get_value(tstp,v0);
 	for(int k=0;k<latt_.nk_;k++){
-		double wk=latt_.kweight_bz_[k]; 
-		int i1,i2,c12,at,ct;
+		double wk=latt_.kweight_bz_[k];
 		cdmatrix rtmp;
-		// gk_all_timesteps_.G_[latt_.representative_kk(k)].density_matrix(tstp,rtmp);
 		density_k_[k].rho_.get_value(tstp,rtmp);
-		// std::cout << "hartree inside " << " " << rtmp << std::endl;
-		// Electronic
-		// for(int i = 0; i < 2; i++) {
-  //   		MPI_Barrier(MPI_COMM_WORLD);
-  //   		if (i == this->tid_){
-  //        		std::cout <<" Inside S hartree " << this->tid_ << " " << kk << " " << latt_.representative_kk(k)  << " " << v0 << " " << std::endl;
-		// 		std::cout << rtmp << " " << wk << std::endl;
-  //   		}
-		// }
-
 		for(int i1=0;i1<nrpa_;i1++){
 			for(int itmp=0;itmp<nrpa_;itmp++){
-				stmp(i1,i1)+=v0(i1,itmp)*rtmp(itmp,itmp)*wk;
-				// std::cout << "Inside hartree " << rtmp << " " << wk <<  " " << v0 << std::endl;
+				S(i1,i1)+=v0(i1,itmp)*rtmp(itmp,itmp)*wk;
 			}
 		}
-		// stmp*=wk;
 	}
+}
 
-	// Electron-phonon interaction
-	cdmatrix tmp,tmpP,Vtmp(nrpa_,nrpa_),Xtmp(1,1);
+template <class LATTICE>
+void mpi_lattice_step_optical<LATTICE>::get_Sigma_phonon_mean_field(int tstp,cdmatrix &S){
+	S.setZero();
+	cdmatrix Xtmp(1,1);
 	X_.get_value(tstp,Xtmp);
-	// std::cout << "Inside hartree2 " << tstp << " " << Vtmp << " " << Xtmp<< std::endl;
-	this->phonon_.hartree(Vtmp,Xtmp);
-	// std::cout << "Inside hartree2 " << tstp << " " << Vtmp << " " << Xtmp<< std::endl;
-	stmp+=Vtmp;
+	this->phonon_.hartree(S,Xtmp);
+}
 
-	S.set_value(tstp,stmp);
+template <class LATTICE>
+void mpi_lattice_step_optical<LATTICE>::get_Sigma_Hartree_original(int tstp,CFUNC &S){
+	cdmatrix stmp(nrpa_,nrpa_),v0;
+	if(update_ || tstp<0){
+		stmp.setZero();
+		vertex_[latt_.G_].get_value(tstp,v0);
+		for(int k=0;k<latt_.nk_;k++){
+			double wk=latt_.kweight_bz_[k];
+			cdmatrix rtmp;
+			density_k_[k].rho_.get_value(tstp,rtmp);
+			for(int i1=0;i1<nrpa_;i1++){
+				for(int itmp=0;itmp<nrpa_;itmp++){
+					stmp(i1,i1)+=v0(i1,itmp)*rtmp(itmp,itmp)*wk;
+				}
+			}
+		}
+
+		cdmatrix phonon_mean_field(nrpa_,nrpa_),Xtmp(1,1);
+		X_.get_value(tstp,Xtmp);
+		this->phonon_.hartree(phonon_mean_field,Xtmp);
+		stmp+=phonon_mean_field;
 	}else{
 		S.get_value(-1,stmp);
 	}
 	S.set_value(tstp,stmp);
-	// std::cout << "hartree inside end " << " " << stmp << std::endl;
-	// std::cout << "Hartree 3 " << std::endl;
+}
+
+template <class LATTICE>
+void mpi_lattice_step_optical<LATTICE>::get_Sigma_Hartree(int tstp,CFUNC &S){
+	cdmatrix stmp(nrpa_,nrpa_);
+	if(update_ || tstp<0){
+		cdmatrix electronic_hartree(nrpa_,nrpa_);
+		cdmatrix phonon_mean_field(nrpa_,nrpa_);
+		get_Sigma_Hartree_electronic(tstp,electronic_hartree);
+		get_Sigma_phonon_mean_field(tstp,phonon_mean_field);
+		stmp=electronic_hartree+phonon_mean_field;
+	}else{
+		S.get_value(-1,stmp);
+	}
+	S.set_value(tstp,stmp);
 }
 
 template <class LATTICE>
