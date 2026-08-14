@@ -3,7 +3,7 @@
 // header focused on optical-abinitio
 
 #include "lattice_decl.hpp"
-#include "exciton_photo.hpp"
+#include "exciton_2b.hpp"
 
 #include "dyson_decl.hpp"
 #include "step_decl.hpp"

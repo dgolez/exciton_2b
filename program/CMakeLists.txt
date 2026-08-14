@@ -10,7 +10,7 @@ if (hdf5 AND mpi)
   # ~~ hdf5 programs
 
   set( program_sources
-    exciton_photo.cpp
+    exciton_2b.cpp
   )
 
   foreach(source_file ${program_sources})
