@@ -180,33 +180,6 @@ void mpi_lattice_step_optical<LATTICE>::get_Sigma_phonon_mean_field(int tstp,cdm
 }
 
 template <class LATTICE>
-void mpi_lattice_step_optical<LATTICE>::get_Sigma_Hartree_original(int tstp,CFUNC &S){
-	cdmatrix stmp(nrpa_,nrpa_),v0;
-	if(update_ || tstp<0){
-		stmp.setZero();
-		vertex_[latt_.G_].get_value(tstp,v0);
-		for(int k=0;k<latt_.nk_;k++){
-			double wk=latt_.kweight_bz_[k];
-			cdmatrix rtmp;
-			density_k_[k].rho_.get_value(tstp,rtmp);
-			for(int i1=0;i1<nrpa_;i1++){
-				for(int itmp=0;itmp<nrpa_;itmp++){
-					stmp(i1,i1)+=v0(i1,itmp)*rtmp(itmp,itmp)*wk;
-				}
-			}
-		}
-
-		cdmatrix phonon_mean_field(nrpa_,nrpa_),Xtmp(1,1);
-		X_.get_value(tstp,Xtmp);
-		this->phonon_.hartree(phonon_mean_field,Xtmp);
-		stmp+=phonon_mean_field;
-	}else{
-		S.get_value(-1,stmp);
-	}
-	S.set_value(tstp,stmp);
-}
-
-template <class LATTICE>
 void mpi_lattice_step_optical<LATTICE>::get_Sigma_Hartree(int tstp,CFUNC &S){
 	cdmatrix stmp(nrpa_,nrpa_);
 	if(update_ || tstp<0){
@@ -361,6 +334,8 @@ void mpi_lattice_step_optical<LATTICE>::get_ekin(int tstp,cdmatrix &ekin){
 	#endif
 }
 
+/* functions  below  are used for post-processing observables, for example to calculate <j(t)> or Seebeck  
+currently not used in the main propagation loop */
 
 template <class LATTICE>
 double mpi_lattice_step_optical<LATTICE>::get_curr(int tstp){
@@ -492,72 +467,6 @@ double mpi_lattice_step_optical<LATTICE>::get_dip(int tstp){
 	#endif
 	return vk;
 }
-
-
-// template <class LATTICE>
-// std::complex<double> mpi_lattice_step_optical<LATTICE>::get_chi0(CFUNC &chi,double domega,int nomega,double om0,double s,double amp){
-//   cdmatrix rtmp(2,2),tmp(2,2);
-//   std::complex<double> optical0=std::complex<double>(0.0,0.0);
-//   std::vector<cdmatrix> sigma(4);
-//   double om;
-//   sigma[0].resize(2,2);sigma[1].resize(2,2);sigma[2].resize(2,2);sigma[3].resize(2,2);
-//   sigma[0].setZero();sigma[1].setZero();sigma[2].setZero();sigma[3].setZero();
-  
-//   sigma[0](0,0)=1.0;
-//   sigma[0](1,1)=1.0;
-//   sigma[1](0,1)=1.0;
-//   sigma[1](1,0)=1.0;
-//   sigma[2](0,1)=std::complex<double>(0.0,-1.0);
-//   sigma[2](1,0)=std::complex<double>(0.0,1.0);
-//   sigma[3](0,0)=1.0;
-//   sigma[3](1,1)=-1.0;
-
-//   cdmatrix previous(4,4);
-
-//   dvector ek,bk(3);
-//   cdmatrix vec,wp(2,2),wm(2,2),vk,Ak;
-//   for(int k=0;k<latt_.nk_;k++){
-//       double wt=latt_.kweight_bz_[k]; // factor 2: ksum normalized for RBZ
-		  
-//       // Eigenvalues and structure factors
-//       density_k_[k].hkeff_.get_value(-1,rtmp);
-//       // std::cout << "Kpoint:  " << k << " " << latt_.kpoints_[k] << " " << rtmp << std::endl;
-//       Eigen::SelfAdjointEigenSolver<cdmatrix> eigensolver(rtmp);
-//       ek=eigensolver.eigenvalues();
-//       vec=eigensolver.eigenvectors();
-            
-//       bk(0)=std::real(rtmp(0,1));
-//       bk(1)=std::imag(rtmp(0,1));
-//       bk(2)=std::real(rtmp(1,1));
-//       wp=0.5*(sigma[0]+(bk(0)*sigma[1]+bk(1)*sigma[2]+bk(2)*sigma[3])/bk.norm());
-//       wm=0.5*(sigma[0]-(bk(0)*sigma[1]+bk(1)*sigma[2]+bk(2)*sigma[3])/bk.norm());
-      
-//       for(int io=0;io<2*nomega+2;io++){
-//     	om=(io-nomega)*domega;
-//     	chi.get_value(io,previous);
-//     	double f1=cntr::fermi<double>(beta_,ek(1))+amp*gauss(ek(1),om0,s)-amp*gauss(ek(1),-om0,s);
-//       	double f0=cntr::fermi<double>(beta_,ek(0))+amp*gauss(ek(0),om0,s)-amp*gauss(ek(0),-om0,s);
-
-//       	for(int mu=0;mu<4;mu++){
-// 			for(int nu=0;nu<4;nu++){ 
-// 				//Sum +-
-// 				// std::cout << "0 : " << previous(mu,nu) << std::endl; 
-//     	  		tmp=sigma[nu]*wp*sigma[mu]*wm;
-//       			previous(mu,nu)+=wt*tmp.trace()*(f0-f1)/(om-(ek(1)-ek(0))+std::complex<double>(0,eta_));
-//       			// std::cout << "1 " << mu << " "<< nu << " " << wt <<" " << tmp.trace() << " " <<  (f0-f1) << " " << previous(mu,nu)  << std::endl;
-//       			//Sum -+
-//       			// std::cout << "2 : " << previous(mu,nu) << std::endl;
-//       			tmp=sigma[nu]*wm*sigma[mu]*wp;
-//       			previous(mu,nu)-=wt*tmp.trace()*(f0-f1)/(om-(ek(0)-ek(1))+std::complex<double>(0,eta_));
-//       			// std::cout << "3 " << mu << " "<< nu << " " << wt <<" " << tmp.trace() << " " <<  (f0-f1) << " " << previous(mu,nu)  << std::endl;
-//       			// std::cout <<"--------------------------" << std::endl;
-//       		} //MU loop
-//       	} //NU loop
-//       	chi.set_value(io,previous);
-//       	// std::cout <<"--------------------------" << std::endl;
-//       } // Omega loop 
-//   }//k loop
-// }
 
 template <class LATTICE>
 std::complex<double> mpi_lattice_step_optical<LATTICE>::get_chi0(double omega,int mu,int nu,double om0,double s,double amp){
@@ -715,7 +624,8 @@ std::complex<double> mpi_lattice_step_optical<LATTICE>::get_optical0(CFUNC &opti
   return optical0;
 }
 
-
+// this attempts to evaluate S using Kubo formula, but function is incomplete
+// it attempts to build transport function phi(omega) but it never constructs L11 and L12 and it doesnt return S
 template <class LATTICE>
 std::complex<double> mpi_lattice_step_optical<LATTICE>::get_seebeck(CFUNC &seebeck,CFUNC &omega,double domega,int nomega){
   std::complex<double> phi=0.0;
@@ -735,7 +645,7 @@ std::complex<double> mpi_lattice_step_optical<LATTICE>::get_seebeck(CFUNC &seebe
       om=(io-nomega)*domega;
       for(int i=0;i<nrpa_;i++) diatmp(i,i)=1.0/(om-ek(i)+std::complex<double>(0,eta_));
  	  G=vec*diatmp*vec.adjoint();
-  	  G=(-1.0)*G.imag()/3.14159265358979323846;
+  	  G=(-1.0)*G.imag()/3.14159265358979323846; // this is single-particle spectral function A
   	  latt_.vkFULL(vk,-1,latt_.kpoints_[k]);
   	  tmp=vk*G*vk*G;
   	  seebeck.get_value(io,previous);
@@ -767,7 +677,7 @@ std::complex<double> mpi_lattice_step_optical<LATTICE>::get_dos(CFUNC &dos,doubl
       omega=(io-nomega)*domega;
       for(int i=0;i<nrpa_;i++) diatmp(i,i)=1.0/(omega-ek(i)+std::complex<double>(0,eta_));
  	  G=vec*diatmp*vec.adjoint();
-  	  G=(-1.0)*G.imag()/3.14159265358979323846;
+  	  G=(-1.0)*G.imag()/3.14159265358979323846;		// this is single-particle spectral function A
   	  dos.get_value(io,previous);
   	  // std::cout << "------------- " << std::endl;
   	  // std::cout << "previous " << previous << std::endl;
@@ -780,6 +690,7 @@ std::complex<double> mpi_lattice_step_optical<LATTICE>::get_dos(CFUNC &dos,doubl
   return phi;
 }
 
+// probably derivative of Fermi-Dirac function
 #define EXPMAX 100
 template <class LATTICE>
 double mpi_lattice_step_optical<LATTICE>::dfermi(double omega,double beta){
@@ -791,11 +702,10 @@ double mpi_lattice_step_optical<LATTICE>::dfermi(double omega,double beta){
     }
 }
 
-
 template <class LATTICE>
 double mpi_lattice_step_optical<LATTICE>::get_seebeck_boltzmann(double beta){
-	double nom=0,mu;
-	double denom=0;
+	double L12=0,mu;
+	double L11=0;
 	int nk=latt_.nk_;
 	double dk=2.0*PI/nk;
 	// std::cout << "dk " <<dk << std::endl;
@@ -803,19 +713,19 @@ double mpi_lattice_step_optical<LATTICE>::get_seebeck_boltzmann(double beta){
 	cdmatrix rtmp1,rtmp2,drtmp,rtmp;
 	for(int k=0;k<nk;k++){
     	double wt=latt_.kweight_bz_[k];
-    	// Make a derivative in k of eigenvalue
+    	// Make a derivative in k of eigenvalue, to get approximation for band velocity via central finite difference
     	density_k_[k].hkeff_eigen_.get_value(-1,rtmp);
     	density_k_[(k+1)%nk].hkeff_eigen_.get_value(-1,rtmp1);
     	density_k_[(k-1+nk)%nk].hkeff_eigen_.get_value(-1,rtmp2);
     	mu=density_k_[k].mu_;
     	drtmp=(rtmp2-rtmp1)/(2.0*dk);
     	// std::cout << "vk " << density_k_[k].kk_ << " " <<  drtmp(0,0) << " " << rtmp(0,0) << " " << dfermi(std::real(rtmp(0,0)-mu),beta)  << " " <<  drtmp(1,1) << " " << rtmp(1,1) << " " << dfermi(std::real(rtmp(1,1)-mu),beta) <<  std::endl;
-    	nom+=wt*std::real(drtmp(0,0)*drtmp(0,0)*dfermi(std::real(rtmp(0,0)-mu),beta)*(rtmp(0,0)-mu) + drtmp(1,1)*drtmp(1,1)*dfermi(std::real(rtmp(1,1)-mu),beta)*(rtmp(1,1)-mu));
-    	denom+=wt*std::real(drtmp(0,0)*drtmp(0,0)*dfermi(std::real(rtmp(0,0)-mu),beta) + drtmp(1,1)*drtmp(1,1)*dfermi(std::real(rtmp(1,1)-mu),beta));
+    	L12+=wt*std::real(drtmp(0,0)*drtmp(0,0)*dfermi(std::real(rtmp(0,0)-mu),beta)*(rtmp(0,0)-mu) + drtmp(1,1)*drtmp(1,1)*dfermi(std::real(rtmp(1,1)-mu),beta)*(rtmp(1,1)-mu));
+    	L11+=wt*std::real(drtmp(0,0)*drtmp(0,0)*dfermi(std::real(rtmp(0,0)-mu),beta) + drtmp(1,1)*drtmp(1,1)*dfermi(std::real(rtmp(1,1)-mu),beta));
     }
     // std::cout << "nom " << nom << std::endl;
     // std::cout << "denom " << denom << std::endl;
-	return nom*beta/denom;
+	return L12*beta/L11;
 }
 
 template <class LATTICE>
