@@ -29,6 +29,7 @@ lattice_1d_2b_optical_nofield_abinitio::lattice_1d_2b_optical_nofield_abinitio(p
 	delta_.resize(nt+2);
 	dipol_=param.dipol;
 	mu_=param.mu;
+	fieldD_=param.fieldD;
 	fieldP_=param.fieldP;
 	ratio_=param.ratio;
 	rho_eq_.resize(nrpa_,nrpa_);
@@ -157,12 +158,17 @@ void lattice_1d_2b_optical_nofield_abinitio::hk(cdmatrix &hkmatrix,int tstp,doub
 	double epskTa=2.0*tTa*cos(kkshift);
 	double epskNi=2.0*tNi*cos(kkshift);
 	// Off-diagonal components (assumption of a/2 distance between atoms)
-	cdouble ak=dipol_*E_[tstp+1];
+	cdouble ak=dipol_*E_[tstp+1]*fieldD_;
+	// std::cout << "Ak " << dipol_*E_[tstp+1]*fieldD_ << std::endl;
 
 	double vq0_01=V(tstp,0.0,0,1);
 	double d0=-vq0_01*std::real(rho_eq_(1,1))-0.5*delta_[tstp+1];
 	double d1=-vq0_01*std::real(rho_eq_(0,0))+0.5*delta_[tstp+1];
+	// double d0=-0.5*delta_[tstp+1];
+	// double d1=+0.5*delta_[tstp+1];
+	// std::cout << "hk " <<  std::real(rho_eq_(0,0)) << " " << std::real(rho_eq_(1,1)) << std::endl;
 	std::complex<double> I(0.0,1.0);
+	// std::complex<double> maz=2.0*sqrt(2)*I*((mazza_/0.3)*sin(kk/2.0));
 	std::complex<double> maz=(1.0-exp(I*kk))*(mazza_/0.3)*sqrt(2);
 
 	hkmatrix.resize(nrpa_,nrpa_);
@@ -191,7 +197,7 @@ void lattice_1d_2b_optical_nofield_abinitio::hkfree(cdmatrix &hkmatrix,int tstp,
 	double d1=0.5*delta_[tstp+1];
 
 	// Off-diagonal components (assumption of a/2 distance between atoms)
-	cdouble ak=dipol_*E_[tstp+1];
+	cdouble ak=dipol_*E_[tstp+1]*fieldD_;
 	std::complex<double> I(0.0,1.0);
 	std::complex<double> maz=2.0*sqrt(2)*I*(mazza_/0.3)*sin(kk/2.0);
 	
