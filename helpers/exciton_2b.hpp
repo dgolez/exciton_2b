@@ -24,7 +24,6 @@ lattice_1d_2b_optical_nofield_abinitio::lattice_1d_2b_optical_nofield_abinitio(p
   	mazza_=param.mazza;
   	A_.resize(nt+2);
   	E_.resize(nt+2);
-	dE_.resize(nt+2);
 	v01_.resize(nt+2);
 	delta_.resize(nt+2);
 	dipol_=param.dipol;
@@ -40,7 +39,6 @@ lattice_1d_2b_optical_nofield_abinitio::lattice_1d_2b_optical_nofield_abinitio(p
 		U_[tstp+1]=param.U[tstp+1];
 		V_[tstp+1]=param.V[tstp+1];
 		E_[tstp+1]=param.E[tstp+1];
-		dE_[tstp+1]=param.dE[tstp+1];
 		v01_[tstp+1]=0.0;
 		delta_[tstp+1]=param.delta[tstp+1];
 		if(tstp>0){

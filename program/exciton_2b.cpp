@@ -21,9 +21,9 @@ using namespace std;
 #include <time.h>
 #include <sys/time.h>
 
-parameters::parameters(int nt,int kt,int nk,int ntau,int size,double beta,double h,double mu,double den, double epsilon, double xi,std::vector<double> &delta,double v01,double v01_time,std::vector<double> &tt,std::vector<double> &U,std::vector<double> &V,CFUNC &omega0,CFUNC &g,std::vector<double> &E,std::vector<double> &dE,double dipolRe,double dipolIm,double ratio,double fieldP,double fieldD,double mazza,bool update,double eta,double gamma,double mix,bool test,int omp_for_vie2,int phonontype,double bath_low,double bath_high,std::vector<double> &gC_bath,std::vector<double> &gV_bath,int migdal,std::vector<double> &gBATH,std::vector<double> &omegaBATH): 
+parameters::parameters(int nt,int kt,int nk,int ntau,int size,double beta,double h,double mu,double den, double epsilon, double xi,std::vector<double> &delta,double v01,double v01_time,std::vector<double> &tt,std::vector<double> &U,std::vector<double> &V,CFUNC &omega0,CFUNC &g,std::vector<double> &E,double dipolRe,double dipolIm,double ratio,double fieldP,double fieldD,double mazza,bool update,double eta,double gamma,double mix,bool test,int omp_for_vie2,int phonontype,double bath_low,double bath_high,std::vector<double> &gC_bath,std::vector<double> &gV_bath,int migdal,std::vector<double> &gBATH,std::vector<double> &omegaBATH): 
 		nt(nt), ntau(ntau), size(size), nk(nk), kt(kt), beta(beta), h(h), mu(mu), den(den), epsilon(epsilon),xi(xi),delta(delta),v01(v01),v01_time(v01_time),
-		tt(tt),U(U),V(V),omega0(omega0),g(g),E(E),dE(dE),dipol(dipolRe,dipolIm),ratio(ratio),fieldP(fieldP),fieldD(fieldD),mazza(mazza),update(update),eta(eta),gamma(gamma),mix(mix),test(test),omp_for_vie2(omp_for_vie2),phonontype(phonontype),bath_low(bath_low),bath_high(bath_high),gC_bath(gC_bath),gV_bath(gV_bath),migdal(migdal),gBATH(gBATH),omegaBATH(omegaBATH){};
+		tt(tt),U(U),V(V),omega0(omega0),g(g),E(E),dipol(dipolRe,dipolIm),ratio(ratio),fieldP(fieldP),fieldD(fieldD),mazza(mazza),update(update),eta(eta),gamma(gamma),mix(mix),test(test),omp_for_vie2(omp_for_vie2),phonontype(phonontype),bath_low(bath_low),bath_high(bath_high),gC_bath(gC_bath),gV_bath(gV_bath),migdal(migdal),gBATH(gBATH),omegaBATH(omegaBATH){};
 
 double get_wall_time(){
     struct timeval time;
@@ -56,7 +56,7 @@ int main(int argc,char *argv[]){
 	bool test,update;
 	double mu,beta,h,errmax,errmax_rtime,err,v01,v01_time,mazza,epsilon,mix,gamma,den;
 	double wtime_limit,wtime_start,wtime_end,xi,dipolRe,dipolIm,eta;
-	std::vector<double> U,V,tt,delta,E,dE,gVec,omega0Vec,gBATH,omegaBATH;
+	std::vector<double> U,V,tt,delta,E,gVec,omega0Vec,gBATH,omegaBATH;
 	approx<lattice_1d_2b_optical_nofield_abinitio> *lattice;
 	int migdal;
 	double om0,s,amp,fieldD,fieldP,ratio,phonontype;
@@ -123,7 +123,6 @@ int main(int argc,char *argv[]){
 		find_param_tvector(argv[1],"__tt=",tt,nt);
 		find_param_tvector(argv[1],"__delta=",delta,nt);
 		find_param_tvector(argv[1],"__E=",E,nt);
-		find_param_tvector(argv[1],"__dE=",dE,nt);
 		find_param(argv[1],"__dipolRe=",dipolRe);
 		find_param(argv[1],"__dipolIm=",dipolIm);
 		find_param(argv[1],"__gamma=",gamma);
@@ -168,7 +167,7 @@ int main(int argc,char *argv[]){
 	}
 
 	std::cout << den << std::endl;
-	parameters param(nt,kt,nk,ntau,size,beta,h,mu,den,epsilon,xi,delta,v01,v01_time,tt,U,V,omega0,g,E,dE,dipolRe,dipolIm,ratio,fieldP,fieldD,mazza,update,eta,gamma,mix,test,(omp_for_vie2==1 ? true : false),phonontype,bath_low,bath_high,gC_bath,gV_bath,migdal,gBATH,omegaBATH);
+	parameters param(nt,kt,nk,ntau,size,beta,h,mu,den,epsilon,xi,delta,v01,v01_time,tt,U,V,omega0,g,E,dipolRe,dipolIm,ratio,fieldP,fieldD,mazza,update,eta,gamma,mix,test,(omp_for_vie2==1 ? true : false),phonontype,bath_low,bath_high,gC_bath,gV_bath,migdal,gBATH,omegaBATH);
 
 	lattice=new mpi_lattice_step_2b_optical<lattice_1d_2b_optical_nofield_abinitio>(param);
 
@@ -198,8 +197,8 @@ int main(int argc,char *argv[]){
 	out.close();
 	if(tid==0) spy(tstp,argv[2]);
 	//////////////////////////////////////////////////////////////////////////////////
-	// initialization: G is initially zero, thus also Sigma=0 and the first step
-	// should produce non-interacting Greens functions
+	// initialization: G is initially zero, thus also Sigma=0 and the first step 
+	// should produce non-interacting Green's functions
 	for(tstp=restart_time;tstp<=nt;tstp++){
 		int itermax1;
 		double errmax1;
@@ -217,18 +216,6 @@ int main(int argc,char *argv[]){
 		// if(tstp>0) lattice->
 		for(iter=1;iter<=itermax1;iter++){
 		  err=lattice->step(tstp,iter,kt,om0,s,amp); /// should work at time zero!
-		  if(tstp==-1 && iter==1){
-			  auto *step_2b=static_cast<mpi_lattice_step_2b_optical<lattice_1d_2b_optical_nofield_abinitio> *>(lattice);
-			  CFUNC sigma_hartree_original(nt,size),sigma_hartree_split(nt,size);
-			  cdmatrix original_value(size,size),split_value(size,size);
-			  step_2b->get_Sigma_Hartree_original(-1,sigma_hartree_original);
-			  step_2b->get_Sigma_Hartree(-1,sigma_hartree_split);
-			  sigma_hartree_original.get_value(-1,original_value);
-			  sigma_hartree_split.get_value(-1,split_value);
-			  double hartree_split_error=(original_value-split_value).norm();
-			  if(tid==0) std::cout << "Hartree split verification, ||Sigma_original - Sigma_split|| = " << hartree_split_error << std::endl;
-			  if(hartree_split_error>1e-12) throw("Hartree split verification failed");
-		  }
 		  if(tid==0){
 		  	cdmatrix tmp(2,2),tmpsym(2,2),ord(1,1);
 		  	lattice->rho_loc_.get_value(tstp,tmp);
