@@ -31,7 +31,7 @@ public:
   phonon(void);
   phonon(CFUNC &omega0,CFUNC &g,CFUNC &density,int phonontype=1);
   void eq(CFUNC &X,CFUNC &Pi);
-  void step(int tstp,CFUNC &X,CFUNC &Pi,int kt,double dt);
+  void step(int tstp,CFUNC &X,CFUNC &Pi,int kt,double h);
   double dx1dt(int tstp,CFUNC &Pi);
   double dx2dt(int tstp,CFUNC &X);
   void hartree(cdmatrix &inter,cdmatrix &X);
@@ -71,7 +71,7 @@ template <class LATTICE> class approx{
     //virtual double get_optical0_eq(double om,int mu,int nu)=0;
 	virtual void read_from_file_hdf5(int tstp,const char *filename_prefix,int kt)=0;
 	virtual void print_to_file_hdf5(const char *filename_prefix,int print_k)=0;
-	virtual void print_to_file_hdf5_slice(const char *filename_prefix,int dt, int print_k)=0;
+	virtual void print_to_file_hdf5_slice(const char *filename_prefix,int outputfrequency, int print_k)=0;
 	virtual ~approx(void)=default;
 };
 
@@ -115,6 +115,8 @@ public:
 	// before this, latt_ must be initialized !!
   	mpi_lattice_step_optical(parameters &param);
 	// void init(int nt,int ntau,int size,double beta,double h,bool use_omp_for_vie2,double mu,double epsilon);
+	void get_Sigma_Hartree_electronic(int tstp,cdmatrix &S);
+	void get_Sigma_phonon_mean_field(int tstp,cdmatrix &S);
 	void get_Sigma_Hartree(int tstp,int kk,CFUNC &S);
 	void get_Sigma_Fock(int tstp,int kk,CFUNC &S);
 	void set_local(int tstp);
@@ -140,7 +142,7 @@ public:
 	virtual double step(int tstp,int iter,int kt,double om0,double s,double amp) override;
 	virtual void read_from_file_hdf5(int tstp,const char *filename_prefix,int kt) override;
 	virtual void print_to_file_hdf5(const char *filename_prefix,int print_k);
-	virtual void print_to_file_hdf5_slice(const char *filename_prefix,int dt,int print_k);
+	virtual void print_to_file_hdf5_slice(const char *filename_prefix,int outputfrequency,int print_k);
 	virtual double get_ekin(int tstp) override;
 	virtual void get_ekin(int tstp,cdmatrix &ekin) override;
 	virtual double get_curr(int tstp) override;
@@ -215,5 +217,5 @@ public:
 	virtual double step(int tstp,int iter,int kt,double om0,double s,double amp) override;
 	virtual void read_from_file_hdf5(int tstp,const char *filename_prefix,int kt) override;
 	virtual void print_to_file_hdf5(const char *filename_prefix,int print_k);
-	virtual void print_to_file_hdf5_slice(const char *filename_prefix,int dt,int print_k);
+	virtual void print_to_file_hdf5_slice(const char *filename_prefix,int outputfrequency,int print_k);
 };

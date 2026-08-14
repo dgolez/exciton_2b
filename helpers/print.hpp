@@ -45,7 +45,7 @@ void kpoint_green<LATTICE>::read_from_hdf5(int nt1,const char *filename,LATTICE 
 template <class LATTICE>
 void kpoint_green<LATTICE>::write_to_hdf5(hid_t group_id,kpoint_density<LATTICE> &density){
 	hid_t sub_group_id;
-	// -- Impurty parameters
+	// -- Impurity parameters
 	sub_group_id = create_group(group_id, "parm");
 	store_int_attribute_to_hid(sub_group_id, "nt", nt_); 
 	store_int_attribute_to_hid(sub_group_id, "ntau", ntau_);
@@ -105,7 +105,7 @@ void kpoint_density<LATTICE>::write_to_hdf5(const char *filename){
 }
 
 template <class LATTICE>
-void kpoint_green<LATTICE>::write_to_hdf5_slices(hid_t group_id,int dt,int tid){
+void kpoint_green<LATTICE>::write_to_hdf5_slices(hid_t group_id,int outputfrequency,int tid){
 	hid_t sub_group_id;
 	// -- Impurity parameters
 	sub_group_id = create_group(group_id, "parm");
@@ -117,16 +117,16 @@ void kpoint_green<LATTICE>::write_to_hdf5_slices(hid_t group_id,int dt,int tid){
 	store_double_attribute_to_hid(sub_group_id, "kk", this->kk_);
 	close_group(sub_group_id); // End parameters
 	// -- Green's functions
-	G_.write_to_hdf5_slices(group_id,"G",dt);
-	G_.write_to_hdf5_tavtrel(group_id,"Gtavrel",dt);
-	Sigma_.write_to_hdf5_slices(group_id, "Sigma",dt);
-	chi_.write_to_hdf5_slices(group_id, "chi",dt);
-	chi_.write_to_hdf5_tavtrel(group_id, "chitavtrel",dt);
-	P_.write_to_hdf5_slices(group_id, "P",dt);
+	G_.write_to_hdf5_slices(group_id,"G",outputfrequency);
+	G_.write_to_hdf5_tavtrel(group_id,"Gtavrel",outputfrequency);
+	Sigma_.write_to_hdf5_slices(group_id, "Sigma",outputfrequency);
+	chi_.write_to_hdf5_slices(group_id, "chi",outputfrequency);
+	chi_.write_to_hdf5_tavtrel(group_id, "chitavtrel",outputfrequency);
+	P_.write_to_hdf5_slices(group_id, "P",outputfrequency);
 }
 
 template <class LATTICE>
-void kpoint_density<LATTICE>::write_to_hdf5_density(hid_t group_id,int dt,int tid){
+void kpoint_density<LATTICE>::write_to_hdf5_density(hid_t group_id,int outputfrequency,int tid){
 	hid_t sub_group_id;
 	// -- Impurity parameters
 	sub_group_id = create_group(group_id, "parm");
@@ -148,9 +148,9 @@ void kpoint_density<LATTICE>::write_to_hdf5_density(hid_t group_id,int dt,int ti
 }
 
 template <class LATTICE>
-void kpoint_green<LATTICE>::write_to_hdf5_slices(const char *filename,int dt,int tid){
+void kpoint_green<LATTICE>::write_to_hdf5_slices(const char *filename,int outputfrequency,int tid){
 	hid_t file_id = open_hdf5_file(filename);
-	this->write_to_hdf5_slices(file_id,dt,tid);
+	this->write_to_hdf5_slices(file_id,outputfrequency,tid);
 	close_hdf5_file(file_id);
 }
 
@@ -285,17 +285,21 @@ void mpi_lattice_step_2b_optical<LATTICE>::print_to_file_hdf5(const char *filena
 }
 
 template <class LATTICE>
-void mpi_lattice_step_optical<LATTICE>::print_to_file_hdf5_slice(const char *filename_prefix,int dt,int print_k){
+void mpi_lattice_step_optical<LATTICE>::print_to_file_hdf5_slice(const char *filename_prefix,int outputfrequency,int print_k){
 }
 
 template <class LATTICE>
-void mpi_lattice_step_2b_optical<LATTICE>::print_to_file_hdf5_slice(const char *filename_prefix,int dt,int print_k){
+void mpi_lattice_step_2b_optical<LATTICE>::print_to_file_hdf5_slice(const char *filename_prefix,int outputfrequency,int print_k){
   assert(std::strlen(filename_prefix)<900);
 	// NOTE on MPI:
 	// not using parallel hdf5, so should write in serial, to ensure coherent file access
 	// maybe a bit faster, depending on the network structure:write files for each k
 	// std::cout << "slice 1: " << this->tid_ << std::endl;
 	if(this->tid_==this->tid_root_){
+		//output_local.out          ← file_id
+		//└── Gloc                  ← group_id
+		//	└── datasets written by Gloc_.write_to_hdf5(...)
+
 		char fnametmp[1000];
 		std::sprintf(fnametmp,"%s_local.out",filename_prefix);
 		hid_t file_id = open_hdf5_file(std::string(fnametmp));
@@ -307,13 +311,13 @@ void mpi_lattice_step_2b_optical<LATTICE>::print_to_file_hdf5_slice(const char *
 		close_group(group_id); // End parameters
 		// -- Green's functions
 		group_id = create_group(file_id, "Gloc");
-		Gloc_.write_to_hdf5_slices(group_id,dt);
+		Gloc_.write_to_hdf5_slices(group_id,outputfrequency);
 		close_group(group_id);
 		group_id = create_group(file_id, "Gloc_full");
 		Gloc_.write_to_hdf5(group_id);
 		close_group(group_id);
 		group_id = create_group(file_id, "Gtavrel");
-		Gloc_.write_to_hdf5_tavtrel(group_id,dt);
+		Gloc_.write_to_hdf5_tavtrel(group_id,outputfrequency);
 		close_group(group_id);
 		close_hdf5_file(file_id);
 	}
@@ -323,7 +327,7 @@ void mpi_lattice_step_2b_optical<LATTICE>::print_to_file_hdf5_slice(const char *
 			std::sprintf(fnametmp,"%s_denk%d.out",filename_prefix,k);
 			std::cout << "writing hdf5 data to " << fnametmp << std::endl;
 			hid_t file_id = open_hdf5_file(std::string(fnametmp));
-			this->density_k_[k].write_to_hdf5_density(file_id,dt,this->tid_);
+			this->density_k_[k].write_to_hdf5_density(file_id,outputfrequency,this->tid_);
 			close_hdf5_file(file_id);
 		}
 	}
@@ -347,7 +351,7 @@ void mpi_lattice_step_2b_optical<LATTICE>::print_to_file_hdf5_slice(const char *
 	      std::cout << "writing hdf5 data to " << fnametmp << std::endl;
 	      hid_t file_id = open_hdf5_file(std::string(fnametmp));
 	      //hid_t group_id = create_group(file_id,std::string(suffix));
-	      green_k_[k].write_to_hdf5_slices(file_id,dt,this->tid_);
+	      green_k_[k].write_to_hdf5_slices(file_id,outputfrequency,this->tid_);
 	      close_hdf5_file(file_id);
 	    }
 	  }
