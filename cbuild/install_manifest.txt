@@ -1,1 +1,0 @@
-/home/stuhecana/opt/bin/exciton_photo.ex
