@@ -2,6 +2,10 @@
 
 #include "inclusions.hpp"
 
+// phonontype = 0: Holstein-like coupling to total density; produces a diagonal common energy shift.
+// phonontype = 1: coupling to real interband coherence / hybridization.
+// phonontype = 3: coupling to the orbital-density difference \(n_1-n_0\); produces opposite diagonal shifts, like a phonon-modulated band splitting.
+
 // DIPOLAR COUPLING
 phonon::phonon(void){
 }
@@ -38,6 +42,7 @@ void phonon::step(int tstp,CFUNC &X,CFUNC &Pi,int kt,double h){
   }
 }
 
+// phonon EoM \partial P(t) = omega0*P
 double phonon::dx1dt(int tstp,CFUNC &Pi){
   cdmatrix tmpom(1,1),tmpPi(1,1);
   omega0_.get_value(tstp,tmpom);
@@ -46,6 +51,7 @@ double phonon::dx1dt(int tstp,CFUNC &Pi){
   return tmp;
 }
 
+// phonon EoM \partial X(t) = -omega0*X + other, where other depends on phonontype
 double phonon::dx2dt(int tstp,CFUNC &X){
   cdmatrix tmpom(1,1),tmpX(1,1),tmpG(1,1);
   int size=density_.size1_;
