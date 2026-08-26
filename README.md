@@ -76,7 +76,7 @@ Redundant parameters, so I removed them:
 - gamma: relaxation rate in von Neumann equation, used only if mean field approximation is done. not needed here
 - epsilon: seed for U_k e.g. to measure susceptibility if mean field approximation is done. not needed here
 - om0, s, emp: they determine the nonthermal occupation perturbation if mean field approximation is done. not needed here
-- ratio: used in vkFREE, which is not needed her
+- ratio: used in vkFULL, which is not needed her
 - bath_low, bath_high, gC_bath, gV_bath: they determine fermionic bath, which is however not used here (instead, a phononic bath is used)
   
 ## How one runs the program
