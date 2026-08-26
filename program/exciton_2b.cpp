@@ -152,7 +152,7 @@ int main(int argc,char *argv[]){
 	  }
 	}
 
-	std::cout << den << std::endl;
+	std::cout << "mpi rank= " << tid << std::endl;
 	parameters param(nt,kt,nk,ntau,size,beta,h,mu,den,xi,delta,v01,v01_time,tt,U,V,omega0,g,E,dipolRe,dipolIm,fieldP,fieldD,mazza,update,eta,mix,test,(omp_for_vie2==1 ? true : false),phonontype,migdal,gBATH,omegaBATH);
 
 	lattice=new mpi_lattice_step_2b_optical<lattice_1d_2b_optical_nofield_abinitio>(param);
