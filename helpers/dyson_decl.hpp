@@ -96,4 +96,5 @@ public:
 	void write_to_hdf5(const char *filename,kpoint_density<LATTICE> &density);
 	void write_to_hdf5_slices(hid_t group_id,int dt,int tid);
 	void write_to_hdf5_slices(const char *filename,int dt,int tid);
+	void append_to_hdf5(hid_t group_id,int tstp,bool write_parameters);
 };

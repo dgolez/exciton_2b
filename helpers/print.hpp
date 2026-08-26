@@ -1,5 +1,7 @@
 #pragma once
 
+#include <sys/stat.h>
+
 #include "inclusions.hpp"
 
 inline void close_open_hdf5_groups(hid_t file_id){
@@ -11,6 +13,40 @@ inline void close_open_hdf5_groups(hid_t file_id){
 	for(ssize_t i=0;i<found;i++){
 		close_group(group_ids[static_cast<std::size_t>(i)]);
 	}
+}
+
+inline bool hdf5_checkpoint_exists(const char *filename){
+	struct stat info;
+	return stat(filename,&info)==0;
+}
+
+inline hid_t open_or_create_hdf5_group(hid_t parent_id,const std::string &name){
+	htri_t exists=H5Lexists(parent_id,name.c_str(),H5P_DEFAULT);
+	if(exists<0) throw std::runtime_error("HDF5 failed to inspect group '"+name+"'");
+	return exists ? open_group(parent_id,name) : create_group(parent_id,name);
+}
+
+template <class GREEN_TYPE>
+void append_hdf5_timestep(hid_t parent_id,const char *name,GREEN_TYPE &green,int tstp){
+	hid_t matrix_group=open_or_create_hdf5_group(parent_id,name);
+	std::ostringstream timestep_name;
+	timestep_name << "t" << tstp;
+	htri_t exists=H5Lexists(matrix_group,timestep_name.str().c_str(),H5P_DEFAULT);
+	if(exists<0){
+		close_group(matrix_group);
+		throw std::runtime_error("HDF5 failed to inspect group '"+timestep_name.str()+"'");
+	}
+	if(exists){
+		if(H5Ldelete(matrix_group,timestep_name.str().c_str(),H5P_DEFAULT)<0){
+			close_group(matrix_group);
+			throw std::runtime_error("HDF5 failed to replace group '"+timestep_name.str()+"'");
+		}
+	}
+	hid_t timestep_group=create_group(matrix_group,timestep_name.str());
+	cntr::herm_matrix_timestep_view<double> timestep(tstp,green);
+	timestep.write_to_hdf5(timestep_group);
+	close_group(timestep_group);
+	close_group(matrix_group);
 }
 
 
@@ -129,11 +165,27 @@ void kpoint_green<LATTICE>::write_to_hdf5_slices(hid_t group_id,int outputfreque
 	close_group(sub_group_id); // End parameters
 	// -- Green's functions
 	G_.write_to_hdf5_slices(group_id,"G",outputfrequency);
-	G_.write_to_hdf5_tavtrel(group_id,"Gtavrel",outputfrequency);
 	Sigma_.write_to_hdf5_slices(group_id, "Sigma",outputfrequency);
 	chi_.write_to_hdf5_slices(group_id, "chi",outputfrequency);
-	chi_.write_to_hdf5_tavtrel(group_id, "chitavtrel",outputfrequency);
 	P_.write_to_hdf5_slices(group_id, "P",outputfrequency);
+}
+
+template <class LATTICE>
+void kpoint_green<LATTICE>::append_to_hdf5(hid_t group_id,int tstp,bool write_parameters){
+	if(write_parameters){
+		hid_t parm_group=create_group(group_id,"parm");
+		store_int_attribute_to_hid(parm_group,"nt",this->nt_);
+		store_int_attribute_to_hid(parm_group,"ntau",this->ntau_);
+		store_double_attribute_to_hid(parm_group,"beta",this->beta_);
+		store_double_attribute_to_hid(parm_group,"h",this->h_);
+		store_double_attribute_to_hid(parm_group,"mu",this->mu_);
+		store_double_attribute_to_hid(parm_group,"kk",this->kk_);
+		close_group(parm_group);
+	}
+	append_hdf5_timestep(group_id,"G",G_,tstp);
+	append_hdf5_timestep(group_id,"Sigma",Sigma_,tstp);
+	append_hdf5_timestep(group_id,"chi",chi_,tstp);
+	append_hdf5_timestep(group_id,"P",P_,tstp);
 }
 
 template <class LATTICE>
@@ -306,11 +358,11 @@ void mpi_lattice_step_2b_optical<LATTICE>::print_to_file_hdf5(const char *filena
 }
 
 template <class LATTICE>
-void mpi_lattice_step_optical<LATTICE>::print_to_file_hdf5_slice(const char *filename_prefix,int outputfrequency,int print_k, bool write_full){
+void mpi_lattice_step_optical<LATTICE>::print_to_file_hdf5_slice(const char *filename_prefix,int outputfrequency,int print_k,int tstp,bool write_full){
 }
 
 template <class LATTICE>
-void mpi_lattice_step_2b_optical<LATTICE>::print_to_file_hdf5_slice(const char *filename_prefix,int outputfrequency,int print_k, bool write_full){
+void mpi_lattice_step_2b_optical<LATTICE>::print_to_file_hdf5_slice(const char *filename_prefix,int outputfrequency,int print_k,int tstp,bool write_full){
   assert(std::strlen(filename_prefix)<900);
 	// NOTE on MPI:
 	// not using parallel hdf5, so should write in serial, to ensure coherent file access
@@ -327,25 +379,27 @@ void mpi_lattice_step_2b_optical<LATTICE>::print_to_file_hdf5_slice(const char *
 		}else{
 			std::sprintf(fnametmp,"%s_localD.out",filename_prefix);
 		}
-		hid_t file_id = open_hdf5_file(std::string(fnametmp));
-		hid_t group_id = create_group(file_id, "parm");
-		store_int_attribute_to_hid(group_id, "nt", this->nt_); 
-		store_int_attribute_to_hid(group_id, "ntau", this->ntau_);
-		store_double_attribute_to_hid(group_id, "beta", this->beta_);
-		store_double_attribute_to_hid(group_id, "h", this->h_);
-		close_group(group_id); // End parameters
-		// -- Green's functions
-		group_id = create_group(file_id, "Gloc");
-		Gloc_.write_to_hdf5_slices(group_id,outputfrequency);
-		close_group(group_id);
+		bool append=!write_full && tstp!=-1 && hdf5_checkpoint_exists(fnametmp);
+		hid_t file_id=open_hdf5_file(std::string(fnametmp),append ? h5_mode::rdwr : h5_mode::create_truncate);
+		if(write_full || !append){
+			hid_t group_id=create_group(file_id,"parm");
+			store_int_attribute_to_hid(group_id,"nt",this->nt_);
+			store_int_attribute_to_hid(group_id,"ntau",this->ntau_);
+			store_double_attribute_to_hid(group_id,"beta",this->beta_);
+			store_double_attribute_to_hid(group_id,"h",this->h_);
+			close_group(group_id);
+		}
 		if(write_full){
+			hid_t group_id=create_group(file_id,"Gloc");
+			Gloc_.write_to_hdf5_slices(group_id,outputfrequency);
+			close_group(group_id);
 			group_id = create_group(file_id, "Gloc_full");
 			Gloc_.write_to_hdf5(group_id);
 			close_group(group_id);
-			group_id = create_group(file_id, "Gtavrel");
-			Gloc_.write_to_hdf5_tavtrel(group_id,outputfrequency);
-			close_group(group_id);
+		}else{
+			append_hdf5_timestep(file_id,"Gloc",Gloc_,tstp);
 		}
+		H5Fflush(file_id,H5F_SCOPE_GLOBAL);
 		close_open_hdf5_groups(file_id);
 		close_hdf5_file(file_id);
 	}
@@ -380,15 +434,20 @@ void mpi_lattice_step_2b_optical<LATTICE>::print_to_file_hdf5_slice(const char *
 	    if(this->tid_map_[k]==this->tid_){
 	      // std::cout << "slice 3" << this->tid_ <<  std::endl;
 	      char fnametmp[1000];
-	      if(write_full){
-			std::sprintf(fnametmp,"%s_k%d.out",filename_prefix,k);
+		      if(write_full){
+				std::sprintf(fnametmp,"%s_k%d.out",filename_prefix,k);
 			}else{
-			std::sprintf(fnametmp,"%s_kD%d.out",filename_prefix,k);
+				std::sprintf(fnametmp,"%s_kD%d.out",filename_prefix,k);
 			}
 	      std::cout << "writing hdf5 data to " << fnametmp << std::endl;
-	      hid_t file_id = open_hdf5_file(std::string(fnametmp));
-	      //hid_t group_id = create_group(file_id,std::string(suffix));
-	      green_k_[k].write_to_hdf5_slices(file_id,outputfrequency,this->tid_);
+	      bool append=!write_full && tstp!=-1 && hdf5_checkpoint_exists(fnametmp);
+	      hid_t file_id=open_hdf5_file(std::string(fnametmp),append ? h5_mode::rdwr : h5_mode::create_truncate);
+	      if(write_full){
+	        green_k_[k].write_to_hdf5_slices(file_id,outputfrequency,this->tid_);
+	      }else{
+	        green_k_[k].append_to_hdf5(file_id,tstp,!append);
+	      }
+	      H5Fflush(file_id,H5F_SCOPE_GLOBAL);
 	      close_open_hdf5_groups(file_id);
 	      close_hdf5_file(file_id);
 	    }

@@ -239,7 +239,7 @@ int main(int argc,char *argv[]){
 			abort();
 		}
 		if(tstp==-1 || tstp%outputfrequency==0){
-			lattice->print_to_file_hdf5_slice(argv[2],outputfrequency,print_k,false);
+			lattice->print_to_file_hdf5_slice(argv[2],outputfrequency,print_k,tstp,false);
 		}
 		//lattice->get_optical0_eq(0.0,0,0);
 		//std::cout << "Matsubara converged" << std::endl;
@@ -275,7 +275,7 @@ int main(int argc,char *argv[]){
 	std::cout << "tu smo 1 " << tid  << std::endl;
 	lattice->print_to_file_hdf5(filename,print_k);
 	std::cout << "tu smo 2 " << tid  << std::endl;
-	lattice->print_to_file_hdf5_slice(argv[2],outputfrequency,print_k);
+	lattice->print_to_file_hdf5_slice(argv[2],outputfrequency,print_k,tstp-1);
 	////////////////////////////////////////////////////////////////////////////////////
 	// .....
 	///////////////////////////////////////////////////////////////////////////////////
