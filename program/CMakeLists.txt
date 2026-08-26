@@ -17,7 +17,7 @@ if (hdf5 AND mpi)
 
     STRING(REGEX REPLACE ".cpp" ".ex" executable_file "${source_file}")  
     add_executable(${executable_file} ${source_file})
-    target_link_libraries(${executable_file} cntr cntr_hdf5 ${COMMON_LIBS})
+    target_link_libraries(${executable_file} cntr cntr_hdf5 ${HDF5_LIB} ${COMMON_LIBS})
     install(TARGETS ${executable_file} DESTINATION bin)
 
   endforeach(source_file)
