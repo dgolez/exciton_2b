@@ -40,7 +40,7 @@ Many files are not needed for this purpose. I put them to `other`.
 - nk: number of k points
 - v01: Seed for pair breaking field (present in hamiltonian in first 5 iterations for equilibrium)
 - v01_time: amplitude of Gaussian for pair breaking field in time simulation. this should be non-zero to obtain excitonic susceptibility
-- mix: blends the previous iteration with the newly calculated result; for G and density matrix rho
+- mix: blends the previous iteration with the newly calculated result; for G and density matrix rho. used only in tstp=-1 (equilibrium)
 - phonontype: takes values 0,1,or 3. means that the phonon mode couples to \Psi^\dag \sigma_{phonontype} \Psi. for excitonic case, we take phonontype=1
 
 - mazza: interorbital hopping. beside dipole term, mazza determines off-diagonal elements of hk. its value is put to 0.116 (rescaling is done then by 0.3, which is Ni hopping)
