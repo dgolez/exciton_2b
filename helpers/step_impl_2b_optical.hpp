@@ -197,6 +197,7 @@ double mpi_lattice_step_2b_optical<LATTICE>::step(int tstp,int iter,int kt){
   // assert(tstp<=this->nt_-1);
 	double err;
 	int n;
+	std::cerr << "rank " << this->tid_ << ": step begin tstp=" << tstp << " iter=" << iter << std::endl;
 	// if tstp equals -1 or is bigger than kt, both variables get the value of tstp
 	// if not, n1 gets 0 and n2 gets kt
 	int n1=(tstp==-1 || tstp>kt ? tstp : 0);
@@ -208,11 +209,14 @@ double mpi_lattice_step_2b_optical<LATTICE>::step(int tstp,int iter,int kt){
 		if(migdal_==1) extrapolate_timestep_D(tstp-1,(kt<tstp-1 ? kt : tstp-1));
 	}
 	for(n=n1;n<=n2;n++){
+		std::cerr << "rank " << this->tid_ << ": before G gather n=" << n << std::endl;
 		//if(n1!=n2)
 		gather_gk_timestep(n); //Gather timesteps of all k dependent green's functions
+		std::cerr << "rank " << this->tid_ << ": after G gather n=" << n << std::endl;
 		// set_density_k(n);
 		for(int k=0;k<this->nk_;k++){
 		  if(this->tid_map_[k]==this->tid_){
+		    std::cerr << "rank " << this->tid_ << ": before PP bubble n=" << n << " k=" << k << std::endl;
 		    if(test_){
 		      std::ostringstream nameG;
 		      nameG << "Gk0_" << tstp <<"_" << n <<"_" << iter << "_" << k <<  ".h5";
@@ -221,6 +225,7 @@ double mpi_lattice_step_2b_optical<LATTICE>::step(int tstp,int iter,int kt){
 		    // get_Polarization_Bubble(n,k,green_k_[k].P_);
 		    // The full 2b evaluates a different "bubble" than GW 
 		    get_PP_Bubble(n,k,green_k_[k].P_);
+		    std::cerr << "rank " << this->tid_ << ": after PP bubble n=" << n << " k=" << k << std::endl;
 		    if(migdal_){
 		    	get_phonon_Bubble(n,k,green_k_[k].Pph_);
 		    }

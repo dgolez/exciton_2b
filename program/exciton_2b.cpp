@@ -182,6 +182,7 @@ int main(int argc,char *argv[]){
 	}
 	out.close();
 	if(tid==0) spy(tstp,argv[2]);
+	std::cerr << "rank " << tid << ": entering timestep loop" << std::endl;
 	//////////////////////////////////////////////////////////////////////////////////
 	// initialization: G is initially zero, thus also Sigma=0 and the first step 
 	// should produce non-interacting Green's functions
@@ -201,7 +202,9 @@ int main(int argc,char *argv[]){
 
 		// if(tstp>0) lattice->
 		for(iter=1;iter<=itermax1;iter++){
+		  std::cerr << "rank " << tid << ": before step tstp=" << tstp << " iter=" << iter << std::endl;
 		  err=lattice->step(tstp,iter,kt); /// should work at time zero!
+		  std::cerr << "rank " << tid << ": after step tstp=" << tstp << " iter=" << iter << std::endl;
 		  if(tid==0){
 		  	cdmatrix tmp(2,2),tmpsym(2,2),ord(1,1);
 		  	lattice->rho_loc_.get_value(tstp,tmp);
@@ -235,6 +238,9 @@ int main(int argc,char *argv[]){
 		if(tstp==-1 and err>errmax1){
 			std::cout << "Matsubara didn't converged" << std::endl;
 			abort();
+		}
+		if(tstp==-1 || tstp%outputfrequency==0){
+			lattice->print_to_file_hdf5_slice(argv[2],outputfrequency,print_k,false);
 		}
 		//lattice->get_optical0_eq(0.0,0,0);
 		//std::cout << "Matsubara converged" << std::endl;

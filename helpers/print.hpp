@@ -165,7 +165,7 @@ void mpi_lattice_step_2b_optical<LATTICE>::read_from_file_hdf5(int tstp,const ch
 }
 
 template <class LATTICE>
-void mpi_lattice_step_optical<LATTICE>::print_to_file_hdf5(const char *filename_prefix,int print_k){
+void mpi_lattice_step_optical<LATTICE>::print_to_file_hdf5(const char *filename_prefix,int print_k,bool write_full){
 	CFUNC ekin=CFUNC(this->nt_,1);
 	CFUNC ekinMAT=CFUNC(this->nt_,2);
 	CFUNC curr=CFUNC(this->nt_,1);
@@ -190,7 +190,11 @@ void mpi_lattice_step_optical<LATTICE>::print_to_file_hdf5(const char *filename_
 
 	if(this->tid_==this->tid_root_){
 		char fnametmp[1000];
-		std::sprintf(fnametmp,"%s_local.out",filename_prefix);
+		if(write_full){
+			std::sprintf(fnametmp,"%s_local.out",filename_prefix);
+		}else{
+			std::sprintf(fnametmp,"%s_localD.out",filename_prefix);
+		}
 		std::cout << "writing hdf5 data to " << fnametmp << std::endl;
 		hid_t file_id = open_hdf5_file(std::string(fnametmp));
 		hid_t group_id = create_group(file_id, "parm");
@@ -226,7 +230,7 @@ void mpi_lattice_step_optical<LATTICE>::print_to_file_hdf5(const char *filename_
 }
 
 template <class LATTICE>
-void mpi_lattice_step_2b_optical<LATTICE>::print_to_file_hdf5(const char *filename_prefix,int print_k){
+void mpi_lattice_step_2b_optical<LATTICE>::print_to_file_hdf5(const char *filename_prefix,int print_k,bool write_full){
   assert(std::strlen(filename_prefix)<900);
 	// NOTE on MPI:
 	// not using parallel Hdf5, so should write in serial, to ensure coherent file access
@@ -252,7 +256,11 @@ void mpi_lattice_step_2b_optical<LATTICE>::print_to_file_hdf5(const char *filena
 	if(this->tid_==this->tid_root_){
 		// std::cout << "Print 5 " << this->tid_ << std::endl;
 		char fnametmp[1000];
-		std::sprintf(fnametmp,"%s_local.out",filename_prefix);
+		if(write_full){
+			std::sprintf(fnametmp,"%s_local.out",filename_prefix);
+		}else{
+			std::sprintf(fnametmp,"%s_localD.out",filename_prefix);
+		}
 		std::cout << "writing hdf5 data to " << fnametmp << std::endl;
 		hid_t file_id = open_hdf5_file(std::string(fnametmp));
 		hid_t group_id = create_group(file_id, "parm");
@@ -285,11 +293,11 @@ void mpi_lattice_step_2b_optical<LATTICE>::print_to_file_hdf5(const char *filena
 }
 
 template <class LATTICE>
-void mpi_lattice_step_optical<LATTICE>::print_to_file_hdf5_slice(const char *filename_prefix,int outputfrequency,int print_k){
+void mpi_lattice_step_optical<LATTICE>::print_to_file_hdf5_slice(const char *filename_prefix,int outputfrequency,int print_k, bool write_full){
 }
 
 template <class LATTICE>
-void mpi_lattice_step_2b_optical<LATTICE>::print_to_file_hdf5_slice(const char *filename_prefix,int outputfrequency,int print_k){
+void mpi_lattice_step_2b_optical<LATTICE>::print_to_file_hdf5_slice(const char *filename_prefix,int outputfrequency,int print_k, bool write_full){
   assert(std::strlen(filename_prefix)<900);
 	// NOTE on MPI:
 	// not using parallel hdf5, so should write in serial, to ensure coherent file access
@@ -313,19 +321,26 @@ void mpi_lattice_step_2b_optical<LATTICE>::print_to_file_hdf5_slice(const char *
 		group_id = create_group(file_id, "Gloc");
 		Gloc_.write_to_hdf5_slices(group_id,outputfrequency);
 		close_group(group_id);
-		group_id = create_group(file_id, "Gloc_full");
-		Gloc_.write_to_hdf5(group_id);
-		close_group(group_id);
-		group_id = create_group(file_id, "Gtavrel");
-		Gloc_.write_to_hdf5_tavtrel(group_id,outputfrequency);
-		close_group(group_id);
+		if(write_full){
+			group_id = create_group(file_id, "Gloc_full");
+			Gloc_.write_to_hdf5(group_id);
+			close_group(group_id);
+			group_id = create_group(file_id, "Gtavrel");
+			Gloc_.write_to_hdf5_tavtrel(group_id,outputfrequency);
+			close_group(group_id);
+		}
 		close_hdf5_file(file_id);
 	}
 	for(int k=0;k<this->nk_;k++){
 		if(this->tid_map_[k]==this->tid_){
 			char fnametmp[1000];
-			std::sprintf(fnametmp,"%s_denk%d.out",filename_prefix,k);
-			std::cout << "writing hdf5 data to " << fnametmp << std::endl;
+			if(write_full){
+				std::sprintf(fnametmp,"%s_denk%d.out",filename_prefix,k);
+			}else{
+				std::sprintf(fnametmp,"%s_denkD%d.out",filename_prefix,k);
+			}
+
+				std::cout << "writing hdf5 data to " << fnametmp << std::endl;
 			hid_t file_id = open_hdf5_file(std::string(fnametmp));
 			this->density_k_[k].write_to_hdf5_density(file_id,outputfrequency,this->tid_);
 			close_hdf5_file(file_id);
@@ -347,7 +362,11 @@ void mpi_lattice_step_2b_optical<LATTICE>::print_to_file_hdf5_slice(const char *
 	    if(this->tid_map_[k]==this->tid_){
 	      // std::cout << "slice 3" << this->tid_ <<  std::endl;
 	      char fnametmp[1000];
-	      std::sprintf(fnametmp,"%s_k%d.out",filename_prefix,k);
+	      if(write_full){
+			std::sprintf(fnametmp,"%s_k%d.out",filename_prefix,k);
+			}else{
+			std::sprintf(fnametmp,"%s_kD%d.out",filename_prefix,k);
+			}
 	      std::cout << "writing hdf5 data to " << fnametmp << std::endl;
 	      hid_t file_id = open_hdf5_file(std::string(fnametmp));
 	      //hid_t group_id = create_group(file_id,std::string(suffix));

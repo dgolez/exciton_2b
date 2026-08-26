@@ -70,8 +70,8 @@ template <class LATTICE> class approx{
 	virtual double get_eneHF(int tstp)=0;
     //virtual double get_optical0_eq(double om,int mu,int nu)=0;
 	virtual void read_from_file_hdf5(int tstp,const char *filename_prefix,int kt)=0;
-	virtual void print_to_file_hdf5(const char *filename_prefix,int print_k)=0;
-	virtual void print_to_file_hdf5_slice(const char *filename_prefix,int outputfrequency, int print_k)=0;
+	virtual void print_to_file_hdf5(const char *filename_prefix,int print_k, bool write_full=true)=0;
+	virtual void print_to_file_hdf5_slice(const char *filename_prefix,int outputfrequency, int print_k, bool write_full=true)=0;
 	virtual ~approx(void)=default;
 };
 
@@ -138,8 +138,8 @@ public:
 
 	virtual double step(int tstp,int iter,int kt) override;
 	virtual void read_from_file_hdf5(int tstp,const char *filename_prefix,int kt) override;
-	virtual void print_to_file_hdf5(const char *filename_prefix,int print_k);
-	virtual void print_to_file_hdf5_slice(const char *filename_prefix,int outputfrequency,int print_k);
+	virtual void print_to_file_hdf5(const char *filename_prefix,int print_k,bool write_full=true);
+	virtual void print_to_file_hdf5_slice(const char *filename_prefix,int outputfrequency,int print_k,bool write_full=true);
 	virtual double get_ekin(int tstp) override;
 	virtual void get_ekin(int tstp,cdmatrix &ekin) override;
 	virtual double get_curr(int tstp) override;
@@ -212,6 +212,6 @@ public:
 
 	virtual double step(int tstp,int iter,int kt) override;
 	virtual void read_from_file_hdf5(int tstp,const char *filename_prefix,int kt) override;
-	virtual void print_to_file_hdf5(const char *filename_prefix,int print_k);
-	virtual void print_to_file_hdf5_slice(const char *filename_prefix,int outputfrequency,int print_k);
+	virtual void print_to_file_hdf5(const char *filename_prefix,int print_k,bool write_full=true);
+	virtual void print_to_file_hdf5_slice(const char *filename_prefix,int outputfrequency,int print_k,bool write_full=true);
 };
