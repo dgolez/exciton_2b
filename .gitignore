@@ -4,6 +4,5 @@
 cbuild/
 other/input.txt
 other/fin.ipynb
-program/
 *.out
 program/CMakeLists.txt
