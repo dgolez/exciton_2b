@@ -2,6 +2,17 @@
 
 #include "inclusions.hpp"
 
+inline void close_open_hdf5_groups(hid_t file_id){
+	ssize_t count=H5Fget_obj_count(file_id,H5F_OBJ_GROUP);
+	if(count<=0) return;
+
+	std::vector<hid_t> group_ids(static_cast<std::size_t>(count));
+	ssize_t found=H5Fget_obj_ids(file_id,H5F_OBJ_GROUP,group_ids.size(),group_ids.data());
+	for(ssize_t i=0;i<found;i++){
+		close_group(group_ids[static_cast<std::size_t>(i)]);
+	}
+}
+
 
 template <class LATTICE>
 void kpoint_green<LATTICE>::read_from_hdf5(int tstp,hid_t group_id,LATTICE &latt,kpoint_density<LATTICE> &density){
@@ -275,8 +286,10 @@ void mpi_lattice_step_2b_optical<LATTICE>::print_to_file_hdf5(const char *filena
 		close_group(group_id);
 		group_id = create_group(file_id, "Wloc");
 		Wloc_.write_to_hdf5(group_id);
+		close_group(group_id);
 		group_id = create_group(file_id, "Dloc");
 		Dloc_.write_to_hdf5(group_id);
+		close_group(group_id);
 		group_id = create_group(file_id, "D0loc");
 		D0loc_.write_to_hdf5(group_id);
 		close_group(group_id);
@@ -309,7 +322,11 @@ void mpi_lattice_step_2b_optical<LATTICE>::print_to_file_hdf5_slice(const char *
 		//	└── datasets written by Gloc_.write_to_hdf5(...)
 
 		char fnametmp[1000];
-		std::sprintf(fnametmp,"%s_local.out",filename_prefix);
+		if(write_full){
+			std::sprintf(fnametmp,"%s_local.out",filename_prefix);
+		}else{
+			std::sprintf(fnametmp,"%s_localD.out",filename_prefix);
+		}
 		hid_t file_id = open_hdf5_file(std::string(fnametmp));
 		hid_t group_id = create_group(file_id, "parm");
 		store_int_attribute_to_hid(group_id, "nt", this->nt_); 
@@ -329,6 +346,7 @@ void mpi_lattice_step_2b_optical<LATTICE>::print_to_file_hdf5_slice(const char *
 			Gloc_.write_to_hdf5_tavtrel(group_id,outputfrequency);
 			close_group(group_id);
 		}
+		close_open_hdf5_groups(file_id);
 		close_hdf5_file(file_id);
 	}
 	for(int k=0;k<this->nk_;k++){
@@ -371,6 +389,7 @@ void mpi_lattice_step_2b_optical<LATTICE>::print_to_file_hdf5_slice(const char *
 	      hid_t file_id = open_hdf5_file(std::string(fnametmp));
 	      //hid_t group_id = create_group(file_id,std::string(suffix));
 	      green_k_[k].write_to_hdf5_slices(file_id,outputfrequency,this->tid_);
+	      close_open_hdf5_groups(file_id);
 	      close_hdf5_file(file_id);
 	    }
 	  }

@@ -182,7 +182,7 @@ int main(int argc,char *argv[]){
 	}
 	out.close();
 	if(tid==0) spy(tstp,argv[2]);
-	std::cerr << "rank " << tid << ": entering timestep loop" << std::endl;
+	// std::cerr << "rank " << tid << ": entering timestep loop" << std::endl;
 	//////////////////////////////////////////////////////////////////////////////////
 	// initialization: G is initially zero, thus also Sigma=0 and the first step 
 	// should produce non-interacting Green's functions
@@ -202,16 +202,15 @@ int main(int argc,char *argv[]){
 
 		// if(tstp>0) lattice->
 		for(iter=1;iter<=itermax1;iter++){
-		  std::cerr << "rank " << tid << ": before step tstp=" << tstp << " iter=" << iter << std::endl;
 		  err=lattice->step(tstp,iter,kt); /// should work at time zero!
-		  std::cerr << "rank " << tid << ": after step tstp=" << tstp << " iter=" << iter << std::endl;
 		  if(tid==0){
 		  	cdmatrix tmp(2,2),tmpsym(2,2),ord(1,1);
 		  	lattice->rho_loc_.get_value(tstp,tmp);
 		  	lattice->rho_sym_.get_value(tstp,tmpsym);
 			lattice->order_.get_value(tstp,ord);
-		  	cout << "tstp= " << tstp << " iter:  " << iter << " err: " << err << " - " << tmp << " " << tmp.trace() << " order_cos: " << tmpsym(0,1) << " order: " << ord(0,0)  << " "   << endl;
-		  }
+			//cout << "tstp= " << tstp << " iter:  " << iter << " err: " << err << " - " << tmp << " " << tmp.trace() << " order_cos: " << tmpsym(0,1) << " order: " << ord(0,0)  << " "   << endl;
+			cout << "tstp= " << tstp << " iter:  " << iter << " err: " << err << " "   << endl;
+		}
 		  // Set up the local density matrix for the Hartree shift
 		  cdmatrix tmp;
 		  lattice->rho_loc_.get_value(-1,tmp);
