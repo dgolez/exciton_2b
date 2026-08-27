@@ -132,7 +132,6 @@ int main(int argc,char *argv[]){
 		// NOTE: whenever parameters in lattice_rpa.latt_ are reset,
 		// this is automatically recognized by lattice_rpa
 	}
-	std::cout << "tu smo2 "<< std::endl;
 	if(nt<=10 && test){
 		test=test;
 	}else{
@@ -151,7 +150,7 @@ int main(int argc,char *argv[]){
 	    omega0.set_value(tstp,tmpOm);
 	  }
 	}
-
+	
 	std::cout << "mpi rank= " << tid << std::endl;
 	parameters param(nt,kt,nk,ntau,size,beta,h,mu,den,xi,delta,v01,v01_time,tt,U,V,omega0,g,E,dipolRe,dipolIm,fieldP,fieldD,mazza,update,eta,mix,test,(omp_for_vie2==1 ? true : false),phonontype,migdal,gBATH,omegaBATH);
 
@@ -277,9 +276,7 @@ int main(int argc,char *argv[]){
 	char filename[1000];
 	std::cout << "output " << argv[2]<< std::endl;
 	sprintf(filename,"%s_full",argv[2]);
-	std::cout << "tu smo 1 " << tid  << std::endl;
 	lattice->print_to_file_hdf5(filename,print_k);
-	std::cout << "tu smo 2 " << tid  << std::endl;
 	lattice->print_to_file_hdf5_slice(argv[2],outputfrequency,print_k,tstp-1);
 	////////////////////////////////////////////////////////////////////////////////////
 	// .....
