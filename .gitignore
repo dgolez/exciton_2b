@@ -3,6 +3,5 @@
 .AppleDouble
 cbuild/
 other/input.txt
-other/fin.ipynb
 *.out
 program/CMakeLists.txt
