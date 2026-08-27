@@ -190,6 +190,11 @@ int main(int argc,char *argv[]){
 		int itermax1;
 		double errmax1;
 		int kt1;
+
+		double timestep_start=get_wall_time();
+		if(tid==0){
+			std::cout << "starting tstp= " << tstp << " after " << timestep_start-wtime_start << " seconds" << std::endl;
+		}
 		if(tstp==-1){
 			kt1=kt;
 			errmax1=errmax;
@@ -252,7 +257,7 @@ int main(int argc,char *argv[]){
 		if(tid==0){
 		  wtime_end=get_wall_time();	
 		  cont=( wtime_end-wtime_start>wtime_limit ? 0 : 1);
-		  std::cout << "finished tstp= " << tstp << " after " << wtime_end-wtime_start << " seconds" << std::endl;
+		  std::cout << "finished tstp= " << tstp << " | tstp duration: " << wtime_end-timestep_start << " seconds" << " | total elapsed: " << wtime_end-wtime_start << " seconds" << std::endl;
 		}
 		MPI_Bcast(&cont, 1, MPI_INTEGER,0, MPI_COMM_WORLD);
 		if(!cont){
