@@ -31,6 +31,7 @@ lattice_1d_2b_optical_nofield_abinitio::lattice_1d_2b_optical_nofield_abinitio(p
 	fieldD_=param.fieldD;
 	fieldP_=param.fieldP;
 	rho_eq_.resize(nrpa_,nrpa_);
+	rho_eq_.setZero();
 	
 	v01_[0]=param.v01; //Artificial symmetry breaking field only for equilibrium
 	for(int tstp=-1;tstp<=nt;tstp++){
