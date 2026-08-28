@@ -120,8 +120,6 @@ mpi_lattice_step_2b_optical<LATTICE>::mpi_lattice_step_2b_optical(parameters &pa
 	
 }
 
-
-
 template <class LATTICE>
 void mpi_lattice_step_2b_optical<LATTICE>::init_G_mat_nointeraction(void){
 	for(int k=0;k<this->nk_;k++){
@@ -276,8 +274,6 @@ double mpi_lattice_step_2b_optical<LATTICE>::step(int tstp,int iter,int kt){
 	cdmatrix rtmp;
 	this->set_local(tstp);
 	this->set_sym(tstp);
-	// std::cout << "set order 2 " << std::endl;
-	this->set_order(tstp);
 	this->phonon_=phonon(latt_.omega0_,latt_.g_,this->rho_loc_,this->param_.phonontype);
 	for(n=n1;n<=n2;n++){
 
@@ -382,14 +378,12 @@ double mpi_lattice_step_2b_optical<LATTICE>::step(int tstp,int iter,int kt){
 		set_density_k(n);
 		base_type::set_local(n);
 		base_type::set_sym(n);
-		base_type::set_order(n);
 		get_Gloc(n);
 		get_Wloc(n);
 		get_Dloc(n);
 	}
 	return err;
 }
-
 
 template <class LATTICE>
 void mpi_lattice_step_2b_optical<LATTICE>::gather_gk_timestep(int tstp){
@@ -442,8 +436,9 @@ void mpi_lattice_step_2b_optical<LATTICE>::gather_Dk_timestep(int tstp){
 	// std::cout << "Gather dk timestep 5 " <<std::endl;
 }
 
-
 //get P_pp_q (a1,a2) = sum_k ii*G_k(a1,a2_;t,t')G_{q-k}(a1_,a2;t,t')
+//note definition here is different than in Nova Gorica paper (chi)
+//Note:BUBBLE2 IS C_{c1,c2}(t1,t2) = ii * A_{a1,a2}(t1,t2) * B_{b1,b2}(t1,t2) 
 template <class LATTICE>
 void mpi_lattice_step_2b_optical<LATTICE>::get_PP_Bubble(int tstp,int qq,GREEN &P){
   assert(tstp==gk_all_timesteps_.tstp());	
@@ -454,16 +449,9 @@ void mpi_lattice_step_2b_optical<LATTICE>::get_PP_Bubble(int tstp,int qq,GREEN &
 	for(int kk=0;kk<this->latt_.nk_;kk++){
 		double wk=this->latt_.kweight_bz_[kk]; // factor 2: ksum normalized for RBZ
 		int gammakq;
-		// get bubble for 2b approximation
-		// 
-		//kq=latt_.add_kpoints(1,kk,1,qq);
-		qk=this->latt_.add_kpoints(kk,-1,qq,1);
-		//latt_.add_kpoints(kq, gammakq,1,kk,1,qq);
-		//qk1=this->latt_.representative_kk(qk);
-		//kk1=this->latt_.representative_kk(kk);
+		qk=this->latt_.add_kpoints(kk,-1,qq,1); // qk=q-k
 		ptmp.clear();
 
-		//Note:BUBBLE2 IS C_{c1,c2}(t1,t2) = ii * A_{a1,a2}(t1,t2) * B_{b1,b2}(t1,t2) 
 		cntr::Bubble2(tstp,ptmp,0,0,gk_all_timesteps_.G()[kk],gk_all_timesteps_.G()[kk],0,1,gk_all_timesteps_.G()[qk],gk_all_timesteps_.G()[qk],1,0);
 		cntr::Bubble2(tstp,ptmp,0,1,gk_all_timesteps_.G()[kk],gk_all_timesteps_.G()[kk],0,0,gk_all_timesteps_.G()[qk],gk_all_timesteps_.G()[qk],1,1);
 		cntr::Bubble2(tstp,ptmp,1,0,gk_all_timesteps_.G()[kk],gk_all_timesteps_.G()[kk],1,1,gk_all_timesteps_.G()[qk],gk_all_timesteps_.G()[qk],0,0);
@@ -479,8 +467,10 @@ void mpi_lattice_step_2b_optical<LATTICE>::get_PP_Bubble(int tstp,int qq,GREEN &
 	}
 }
 
-//get P_ph_q (a1,a2) = sum_k ii*G_k(a1,a2_;t,t')G_{q-k}(a1_,a2;t,t')
-
+// get P_ph_q (a1,a2) = sum_k ii*G_k(a1,a2_;t,t')G_{q-k}(a1_,a2;t,t')
+// Ana: sth like (Pi_ph)_q(t,t') = i g(t)g(t') \frac{1}{Nk} sum_k Tr [G_k(t,t') sigma_t G_{q-k}^T(t,t') sigma_t]
+// sigma_t depends on phonontype (for phonontype=1, sigma_x)
+//Note:BUBBLE2 IS C_{c1,c2}(t1,t2) = ii * A_{a1,a2}(t1,t2) * B_{b1,b2}(t1,t2) 
 template <class LATTICE>
 void mpi_lattice_step_2b_optical<LATTICE>::get_phonon_Bubble(int tstp,int qq,GREEN &P){
   assert(tstp==gk_all_timesteps_.tstp());	
@@ -491,16 +481,11 @@ void mpi_lattice_step_2b_optical<LATTICE>::get_phonon_Bubble(int tstp,int qq,GRE
 	for(int kk=0;kk<this->latt_.nk_;kk++){
 		double wk=this->latt_.kweight_bz_[kk]; // factor 2: ksum normalized for RBZ
 		int gammakq;
-		// get bubble for 2b approximation
-		// 
-		//kq=latt_.add_kpoints(1,kk,1,qq);
+
 		qk=this->latt_.add_kpoints(kk,-1,qq,1);
-		//latt_.add_kpoints(kq, gammakq,1,kk,1,qq);
-		//qk1=this->latt_.representative_kk(qk);
-		//kk1=this->latt_.representative_kk(kk);
+
 		ptmp.clear();
 
-		//Note:BUBBLE2 IS C_{c1,c2}(t1,t2) = ii * A_{a1,a2}(t1,t2) * B_{b1,b2}(t1,t2) 
 		if(phonontype_==0){ // Holstein
 			cntr::Bubble2(tstp,ptmp,0,0,gk_all_timesteps_.G()[kk],gk_all_timesteps_.G()[kk],0,0,gk_all_timesteps_.G()[qk],gk_all_timesteps_.G()[qk],0,0);
 			P.incr_timestep(tstp,ptmp,wk);
@@ -529,21 +514,19 @@ void mpi_lattice_step_2b_optical<LATTICE>::get_phonon_Bubble(int tstp,int qq,GRE
 			cntr::Bubble2(tstp,ptmp,0,0,gk_all_timesteps_.G()[kk],gk_all_timesteps_.G()[kk],1,1,gk_all_timesteps_.G()[qk],gk_all_timesteps_.G()[qk],1,1);
 			P.incr_timestep(tstp,ptmp,wk);
 		}
-		
-		// increment P += -wt*Ptmp
-		
-		//cdmatrix out;
-		//P.get_mat(0,out);
-		//std::cout << "bubble 3 " << kk << " " << out  << std::endl;
-		//std::cout << " -------------------- " << std::endl;
 	}
 	P.right_multiply(tstp,g_);
 	P.left_multiply(tstp,g_);
 }
 
-// \Sig_{a1,a2}(k,t,t')=-i\sum_q [gamma_pp_{a1,a2_}(q+k,t,t')- gamma_pp_{a1_,a2_}(q+k,t,t')]G_{a2_,a1_}(q,t',t)
+
+
+// Denis:\Sig_{a1,a2}(k,t,t')=-i\sum_q [gamma_pp_{a1,a2_}(q+k,t,t')- gamma_pp_{a1_,a2_}(q+k,t,t')]G_{a2_,a1_}(q,t',t)
 // where gamma_pp_{a1,a2}(q,t,t')=W_{a1,a2}(q,t,t')
 
+// Ana: dynamic terms in electronic self-energy [beyond HF and static el-ph]
+// these include: 2B diagrams, Migdal el-ph self-energy, and Holstein bath
+//Note:BUBBLE1 IS C_{c1,c2}(t1,t2) = ii * A_{a1,a2}(t1,t2) * B_{b2,b1}(t2,t1) 
 template <class LATTICE>
 void mpi_lattice_step_2b_optical<LATTICE>::get_Sigma_2b(int tstp,int kk,GREEN &S,int iter){
   assert(tstp==gk_all_timesteps_.tstp());
@@ -555,10 +538,12 @@ void mpi_lattice_step_2b_optical<LATTICE>::get_Sigma_2b(int tstp,int kk,GREEN &S
 
 	for(int q=0;q<this->latt_.nk_;q++){
 		double wk=this->latt_.kweight_bz_[q]; // factor 2: ksum normalized for RBZ
-		int kq=this->latt_.add_kpoints(kk,1,q,1);
+		int kq=this->latt_.add_kpoints(kk,1,q,1); // kq=k+q
 		//int kq1=this->latt_.representative_kk(kq);
 		//int q1=this->latt_.representative_kk(q);
 		stmp.clear();
+
+		// first contributions with -1
 		cntr::Bubble1(tstp,stmp,0,0,wk_all_timesteps_.G()[kq],wk_all_timesteps_.G()[kq],0,1,gk_all_timesteps_.G()[q],gk_all_timesteps_.G()[q],1,1);
 		cntr::Bubble1(tstp,stmp,1,0,wk_all_timesteps_.G()[kq],wk_all_timesteps_.G()[kq],1,1,gk_all_timesteps_.G()[q],gk_all_timesteps_.G()[q],0,1);
 		cntr::Bubble1(tstp,stmp,0,1,wk_all_timesteps_.G()[kq],wk_all_timesteps_.G()[kq],0,0,gk_all_timesteps_.G()[q],gk_all_timesteps_.G()[q],1,0);
@@ -566,6 +551,7 @@ void mpi_lattice_step_2b_optical<LATTICE>::get_Sigma_2b(int tstp,int kk,GREEN &S
 
 		S.incr_timestep(tstp,stmp,-wk);
 
+		// now contributions with +1
 		cntr::Bubble1(tstp,stmp,0,0,wk_all_timesteps_.G()[kq],wk_all_timesteps_.G()[kq],1,1,gk_all_timesteps_.G()[q],gk_all_timesteps_.G()[q],1,1);
 		cntr::Bubble1(tstp,stmp,1,0,wk_all_timesteps_.G()[kq],wk_all_timesteps_.G()[kq],0,1,gk_all_timesteps_.G()[q],gk_all_timesteps_.G()[q],0,1);
 		cntr::Bubble1(tstp,stmp,0,1,wk_all_timesteps_.G()[kq],wk_all_timesteps_.G()[kq],1,0,gk_all_timesteps_.G()[q],gk_all_timesteps_.G()[q],1,0);
@@ -581,15 +567,12 @@ void mpi_lattice_step_2b_optical<LATTICE>::get_Sigma_2b(int tstp,int kk,GREEN &S
 		// // Add holstein like bath
 		HOLtmp.clear();
 		cntr::Bubble2(tstp,HOLtmp,0,0,gk_all_timesteps_.G()[q],gk_all_timesteps_.G()[q],0,0,D0hol_,D0hol_,0,0);
-   	cntr::Bubble2(tstp,HOLtmp,0,1,gk_all_timesteps_.G()[q],gk_all_timesteps_.G()[q],0,1,D0hol_,D0hol_,0,0);
-    cntr::Bubble2(tstp,HOLtmp,1,0,gk_all_timesteps_.G()[q],gk_all_timesteps_.G()[q],1,0,D0hol_,D0hol_,0,0);
-    cntr::Bubble2(tstp,HOLtmp,1,1,gk_all_timesteps_.G()[q],gk_all_timesteps_.G()[q],1,1,D0hol_,D0hol_,0,0);
+		cntr::Bubble2(tstp,HOLtmp,0,1,gk_all_timesteps_.G()[q],gk_all_timesteps_.G()[q],0,1,D0hol_,D0hol_,0,0);
+		cntr::Bubble2(tstp,HOLtmp,1,0,gk_all_timesteps_.G()[q],gk_all_timesteps_.G()[q],1,0,D0hol_,D0hol_,0,0);
+		cntr::Bubble2(tstp,HOLtmp,1,1,gk_all_timesteps_.G()[q],gk_all_timesteps_.G()[q],1,1,D0hol_,D0hol_,0,0);
 		S.incr_timestep(tstp,HOLtmp,wk);
 	}
 }
-
-// template <class LATTICE>
-// double mpi_lattice_step<LATTICE>::extrapolate(int tstp,int kt);
 
 template <class LATTICE>
 void mpi_lattice_step_2b_optical<LATTICE>::get_Gloc(int tstp){
@@ -661,8 +644,6 @@ void mpi_lattice_step_2b_optical<LATTICE>::get_Dloc(int tstp){
 		D0loc_.set_timestep(tstp,g0tmp);
 	}
 }
-
-
 
 template <class LATTICE>
 double mpi_lattice_step_2b_optical<LATTICE>::get_eneRPA(int tstp,int kt){

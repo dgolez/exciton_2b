@@ -271,7 +271,6 @@ void mpi_lattice_step_optical<LATTICE>::print_to_file_hdf5(const char *filename_
 		// -- Green's functions
 		group_id = create_group(file_id, "obs");
 		rho_loc_.write_to_hdf5(group_id,"rho_loc");
-		order_.write_to_hdf5(group_id,"order");
 		ekin.write_to_hdf5(group_id,"Ekin");
 		ekinMAT.write_to_hdf5(group_id,"EkinMAT");
 		X_.write_to_hdf5(group_id,"X");
@@ -347,7 +346,6 @@ void mpi_lattice_step_2b_optical<LATTICE>::print_to_file_hdf5(const char *filena
 		close_group(group_id);
 		group_id = create_group(file_id, "obs");
 		this->rho_loc_.write_to_hdf5(group_id,"rho_loc");
-		this->order_.write_to_hdf5(group_id,"order");
 		ekin.write_to_hdf5(group_id,"Ekin");
 		X_.write_to_hdf5(group_id,"X");
 		Pi_.write_to_hdf5(group_id,"Pi");

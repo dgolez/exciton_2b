@@ -79,8 +79,7 @@ void lattice_1d_2b_optical_nofield_abinitio::efield_to_afield(int nt,double h,st
 	}
 }
 
-
-
+// makes sure that linear combination of two kpoints is within the 1st Brillouin zone
 int lattice_1d_2b_optical_nofield_abinitio::add_kpoints(int k1,int s1,int k2,int s2){
   int k12=s1*(k1-G_)+s2*(k2-G_)+G_;
   while (k12<0){k12 += nk_;}

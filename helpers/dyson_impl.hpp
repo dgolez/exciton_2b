@@ -452,7 +452,7 @@ void kpoint_green<LATTICE>::step_W2b(int tstp,int kt,LATTICE &latt, kpoint_densi
 template <class LATTICE>
 void kpoint_green<LATTICE>::step_D(int tstp,int kt,LATTICE &latt, kpoint_density<LATTICE>& density){
 	// solve D = D0 + D0*Pph*D, assuming Pph is set on all relevant timesteps
-
+	// this is Voltera type 2 equation of the form (1+F)*D=Q, with F=-D_0*Pph and Q=D_0, and D the unknown
 	if(migdal_==0){
 		D_=D0_;
 	}else if(migdal_==1){
@@ -460,7 +460,8 @@ void kpoint_green<LATTICE>::step_D(int tstp,int kt,LATTICE &latt, kpoint_density
 		int n1=(tstp==-1 || tstp>kt ? tstp : 0);
 		int n2=(tstp==-1 || tstp>kt ? tstp : kt);
 
-		//Make convolution 
+		//Make convolution F=-D_0*Pph (call F D0Pph)
+		//Make convolution F^±=-Pph*D_0 (call it PphD0)
 		for(int n=n1;n<=n2;n++){
 			cntr::convolution_timestep(n,D0Pph_,D0_,D0_,Pph_,Pph_,integration::I<double>(kt),beta_,h_);
 			cntr::convolution_timestep(n,PphD0_,Pph_,Pph_,D0_,D0_,integration::I<double>(kt),beta_,h_);
@@ -469,24 +470,21 @@ void kpoint_green<LATTICE>::step_D(int tstp,int kt,LATTICE &latt, kpoint_density
 			D0Pph_.smul(n,-1.0);
 			PphD0_.smul(n,-1.0);
 		}
-		// D0Pph_.get_mat(0,tmp);
-		// std::cout << "D0Pol " << tmp<< std::endl;
-
-		// PphD0_.get_mat(0,tmp);
-		// std::cout << "PolD0 " << tmp<< std::endl;
-
+		
+		//Solve the Volterra equation
 		for(int n=n1;n<=n2;n++){
 			cdmatrix tmp;	
 			cntr::vie2_timestep(n,D_,D0Pph_,PphD0_,D0_,integration::I<double>(kt),beta_,h_);
 		}
 
+		// it is chosen that D is actually propagator with el-ph couplings gph attached
+		// so that D is ready to be put in Migdal self-energy term
 		for(int n=n1;n<=n2;n++){
 			D_.right_multiply(n,gph_,1.0);
 			D_.left_multiply(n,gph_,1.0);
 		}
 	}
 }
-
 
 template <class LATTICE>
 void kpoint_green<LATTICE>::step_dyson(int tstp,int iter,int kt,LATTICE &latt, kpoint_density<LATTICE> &density){

@@ -25,9 +25,6 @@ mpi_lattice_step_optical<LATTICE>::mpi_lattice_step_optical(parameters &param){
 	rho_loc_.set_zero();
 	rho_sym_=CFUNC(nt_,nrpa_);
 	rho_sym_.set_zero();
-	// std::cout << "set order " << std::endl;
-	order_=CFUNC(nt_,1);
-	order_.set_zero();
 	// Phonon
 	X_=CFUNC(nt_,1);
 	Pi_=CFUNC(nt_,1);
@@ -72,7 +69,6 @@ double mpi_lattice_step_optical<LATTICE>::step(int tstp,int iter,int kt){
   if(iter==1){
   	extrapolate_rho(tstp);
   	set_local(tstp);
-	set_order(tstp);
   	set_sym(tstp);	
   }
   //TODO: USE just one phonon, remove template and add phonontype as parameter
@@ -99,7 +95,6 @@ double mpi_lattice_step_optical<LATTICE>::step(int tstp,int iter,int kt){
     density_k_[k].rho_.set_value(tstp,rtmp);
   }
   set_local(tstp);
-  set_order(tstp);
   set_sym(tstp);
   return err;		
 }
@@ -152,6 +147,8 @@ void mpi_lattice_step_optical<LATTICE>::step_boson(int tstp){
 	}
 }
 
+// electronic part of (static) Hartree self-energy
+// [Sigma^H_{el}]_{ii} = \frac{1}{Nk} \sum_{k,j} V(i,j) rho_k(j,j)
 template <class LATTICE>
 void mpi_lattice_step_optical<LATTICE>::get_Sigma_Hartree_electronic(int tstp,cdmatrix &S){
 	S.setZero();
@@ -170,6 +167,9 @@ void mpi_lattice_step_optical<LATTICE>::get_Sigma_Hartree_electronic(int tstp,cd
 	}
 }
 
+// Hartree shift due to phonon mean field
+// Sigma^H_{ph}(t) = g*X(t)*sigma_t. sigma_t is a Pauli matrix depending on phonon type
+// we use phonontype=1, which means sigma_t=sigma_x
 template <class LATTICE>
 void mpi_lattice_step_optical<LATTICE>::get_Sigma_phonon_mean_field(int tstp,cdmatrix &S){
 	S.setZero();
@@ -178,6 +178,8 @@ void mpi_lattice_step_optical<LATTICE>::get_Sigma_phonon_mean_field(int tstp,cdm
 	this->phonon_.hartree(S,Xtmp);
 }
 
+// combines electronic and phonon contribution to Hartree shifts
+// Sigma^H = Sigma^H_{el} + Sigma^H_{ph}
 template <class LATTICE>
 void mpi_lattice_step_optical<LATTICE>::get_Sigma_Hartree(int tstp,CFUNC &S){
 	cdmatrix stmp(nrpa_,nrpa_);
@@ -193,6 +195,7 @@ void mpi_lattice_step_optical<LATTICE>::get_Sigma_Hartree(int tstp,CFUNC &S){
 	S.set_value(tstp,stmp);
 }
 
+// build and store local density matrix: [rho_loc]_{ij} = \frac{1}{Nk}\sum_k <c_jk^dag c_ik>
 template <class LATTICE>
 void mpi_lattice_step_optical<LATTICE>::set_local(int tstp){
 	cdmatrix loc(nrpa_,nrpa_),tmp(nrpa_,nrpa_),rtmp(nrpa_,nrpa_);
@@ -205,24 +208,6 @@ void mpi_lattice_step_optical<LATTICE>::set_local(int tstp){
 	}
 	rho_loc_.set_value(tstp,loc);
 }
-
-
-template <class LATTICE>
-void mpi_lattice_step_optical<LATTICE>::set_order(int tstp){
-	cdmatrix loc(nrpa_,nrpa_),tmp(nrpa_,nrpa_),rtmp(nrpa_,nrpa_);
-	std::complex<double> I(0.0,1.0);
-	// Local density matrix
-	// std::cout << "set order 3 " << std::endl;
-	loc.setZero();
-	for(int k=0;k<latt_.nk_;k++){
-		double wk=latt_.kweight_bz_[k];
-		density_k_[k].rho_.get_value(tstp,rtmp);
-		loc+=rtmp*wk*(1.0+exp(I*density_k_[k].kk_));
-	}
-	order_.set_value(tstp,loc);
-}
-
-
 
 template <class LATTICE>
 void mpi_lattice_step_optical<LATTICE>::set_sym(int tstp){
@@ -239,42 +224,29 @@ void mpi_lattice_step_optical<LATTICE>::set_sym(int tstp){
 	rho_sym_.set_value(tstp,loc);
 }
 
-
-
+// Fock self energy
+// [Sigma^F_k]_ij = -\frac{1}{Nk}\sum_q (V_q)_ij (rho_{k-q})_ij
 template <class LATTICE>
 void mpi_lattice_step_optical<LATTICE>::get_Sigma_Fock(int tstp,int kk,CFUNC &S){
 	cdmatrix stmp(nrpa_,nrpa_),inter_tmp(nrpa_,nrpa_);
 	if(update_ || tstp<0){
 	cdmatrix Xtmp(1,1);
 	stmp.setZero();
-	// Electrons
 	for(int q=0;q<latt_.nk_;q++){
 		double wk=latt_.kweight_bz_[q];
 		int ct;
 		cdmatrix rtmp,vtmp;
 		int kq,gammakq;
 		kq=latt_.add_kpoints(kk,1,q,-1);
-		// gk_all_timesteps_.G_[latt_.representative_kk(kq)].density_matrix(tstp,rtmp);
 		density_k_[kq].rho_.get_value(tstp,rtmp);
-		// kk_functions_[latt_.representative_kk(kq)].rho_.get_value(tstp,rtmp);		
 		vertex_[q].get_value(tstp,vtmp);
-		// std::cout <<" Inside S fock " << this->tid_ << " " << kk << " " << latt_.representative_kk(q)  << " " << vtmp << std::endl;
-		// std::cout <<  " " << rtmp << " " << wk << std::endl;
-		// std::cout << "q " <<  rtmp << " " << vtmp << std::endl;
 		for(int i1=0;i1<nrpa_;i1++){
 			for(int i2=0;i2<nrpa_;i2++){
 				stmp(i1,i2)-= vtmp(i1,i2)*rtmp(i1,i2)*wk;
-				// std::cout << "Inside Fock " << vtmp(i1,i2)<<std::endl;
-				// std::cout << rtmp(i1,i2) << " " <<wk << std::endl;
 			}
 		}
-		// std::cout << "stmp q " <<  stmp << " " << wk << std::endl;
-		// std::cout <<" ------------- " << std::endl;
 	}
 	inter_tmp=stmp;
-	// std::cout << "Fock " << kk << " " << stmp << std::endl;
-	// std::cout << "After " << tstp << stmp-inter_tmp  << std::endl;
-	// std::cout << "After " << tstp << stmp  << std::endl;
 	}else{
 		S.get_value(-1,stmp);	
 	}
@@ -299,8 +271,6 @@ double mpi_lattice_step_optical<LATTICE>::get_ekin(int tstp){
 	#endif
 	return ekin;
 }
-
-
 
 template <class LATTICE>
 void mpi_lattice_step_optical<LATTICE>::get_ekin(int tstp,cdmatrix &ekin){
@@ -335,7 +305,6 @@ void mpi_lattice_step_optical<LATTICE>::get_ekin(int tstp,cdmatrix &ekin){
 
 /* functions  below  are used for post-processing observables, for example to calculate <j(t)> or Seebeck  
 currently not used in the main propagation loop */
-
 template <class LATTICE>
 double mpi_lattice_step_optical<LATTICE>::get_curr(int tstp){
 	cdmatrix rtmp,hktmp,Aktmp,rtmp1,rtmp2,drtmp;

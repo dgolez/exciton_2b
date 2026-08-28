@@ -71,6 +71,8 @@ double phonon::dx2dt(int tstp,CFUNC &X){
   return tmp;
 }
 
+// equilibrium value of phonon displacement X_eq
+// for phonontype=1: X_eq=-4g*Re[rho_01] / om0, rho_01 = \frac{1}{Nk}\sum_k <c_1k^dag c_0k>
 void phonon::eq(CFUNC &X,CFUNC &Pi){
   int size=density_.size1_;
   cdmatrix tmpom(1,1),tmpX(1,1),tmpG(1,1);
@@ -99,6 +101,7 @@ void phonon::eq(CFUNC &X,CFUNC &Pi){
   // std::cout << "Phonon " << Xtmp << " " << Ptmp << std::endl;
 }
 
+// Sigma^H_{ph}(t) = g*X(t)*sigma_t
 void phonon::hartree(cdmatrix &inter,cdmatrix &X){
   // std::cout << " Hartree Phonon inside   " << std::endl;
   cdmatrix tmpG(1,1);

@@ -50,7 +50,7 @@ template <class LATTICE> class approx{
 	double beta_;
 	double h_;
 	std::vector<cdmatrix> rk_,sh_,sf_,s2rk_;
-	CFUNC rho_loc_,rho_sym_,X_,Pi_,order_;
+	CFUNC rho_loc_,rho_sym_,X_,Pi_;
 	std::vector<int> tid_map_;
 	int ntasks_,tid_,tid_root_;
 	int nt_;
@@ -90,7 +90,6 @@ public:
 	using approx<LATTICE>::s2rk_;
 	using approx<LATTICE>::rho_loc_;
 	using approx<LATTICE>::rho_sym_;
-	using approx<LATTICE>::order_;
 	using approx<LATTICE>::X_;
 	using approx<LATTICE>::Pi_;
 	using approx<LATTICE>::tid_map_;
@@ -119,7 +118,6 @@ public:
 	void get_Sigma_Fock(int tstp,int kk,CFUNC &S);
 	void set_local(int tstp);
 	void set_sym(int tstp);
-	void set_order(int tstp);
 	void extrapolate_rho(int tstp);
 	// void read_from_file(int nt1,const char *folder);
 	// void read_from_file_hdf5(int tstp,const char *filename_prefix,int kt);

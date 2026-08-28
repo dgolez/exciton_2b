@@ -208,11 +208,10 @@ int main(int argc,char *argv[]){
 		for(iter=1;iter<=itermax1;iter++){
 		  err=lattice->step(tstp,iter,kt); /// should work at time zero!
 		  if(tid==0){
-		  	cdmatrix tmp(2,2),tmpsym(2,2),ord(1,1);
-		  	lattice->rho_loc_.get_value(tstp,tmp);
-		  	lattice->rho_sym_.get_value(tstp,tmpsym);
-			lattice->order_.get_value(tstp,ord);
-			//cout << "tstp= " << tstp << " iter:  " << iter << " err: " << err << " - " << tmp << " " << tmp.trace() << " order_cos: " << tmpsym(0,1) << " order: " << ord(0,0)  << " "   << endl;
+				cdmatrix tmp(2,2),tmpsym(2,2);
+				lattice->rho_loc_.get_value(tstp,tmp);
+				lattice->rho_sym_.get_value(tstp,tmpsym);
+				//cout << "tstp= " << tstp << " iter:  " << iter << " err: " << err << " - " << tmp << " " << tmp.trace() << " order_cos: " << tmpsym(0,1) << " " << endl;
 			cout << "tstp= " << tstp << " iter:  " << iter << " err: " << err << " "   << endl;
 		}
 		  // Set up the local density matrix for the Hartree shift
