@@ -307,13 +307,24 @@ void mpi_lattice_step_2b_optical<LATTICE>::print_to_file_hdf5(const char *filena
 	CFUNC HAk=CFUNC(this->nt_,1);
 	CFUNC currP=CFUNC(this->nt_,1);
 	CFUNC currD=CFUNC(this->nt_,1);
+	CFUNC rho_loc_01=CFUNC(this->nt_,1);
+	CFUNC order_cos=CFUNC(this->nt_,1);
 	// std::cout << "Print 2 " << this->tid_ << std::endl;
 	for(int tstp=-1;tstp<=this->nt_;tstp++){
 	//   std::cout << "Print 2a " << this->tid_ << std::endl;
 	  cdmatrix tmp(1,1);
+	  cdmatrix rho_tmp(this->nrpa_,this->nrpa_);
+
 	  tmp(0,0)=base_type::get_ekin(tstp);
 	  ekin.set_value(tstp,tmp);
-	
+
+	  this->rho_loc_.get_value(tstp,rho_tmp);
+	  tmp(0,0)=rho_tmp(0,1);
+	  rho_loc_01.set_value(tstp,tmp);
+
+	  this->rho_sym_.get_value(tstp,rho_tmp);
+	  tmp(0,0)=rho_tmp(0,1);
+	  order_cos.set_value(tstp,tmp);
 	}
 	std::cout << "Print 4 " << this->tid_ << std::endl;
 	if(this->tid_==this->tid_root_){
@@ -346,8 +357,9 @@ void mpi_lattice_step_2b_optical<LATTICE>::print_to_file_hdf5(const char *filena
 		D0loc_.write_to_hdf5(group_id);
 		close_group(group_id);
 		group_id = create_group(file_id, "obs");
-		this->rho_loc_.write_to_hdf5(group_id,"rho_loc");
-		ekin.write_to_hdf5(group_id,"Ekin");
+		rho_loc_01.write_to_hdf5(group_id, "rho_loc_01");
+		order_cos.write_to_hdf5(group_id, "order_cos");
+		ekin.write_to_hdf5(group_id, "Ekin");
 		X_.write_to_hdf5(group_id,"X");
 		Pi_.write_to_hdf5(group_id,"Pi");
 		close_group(group_id);
