@@ -129,6 +129,7 @@ void phonon::hartree(cdmatrix &inter,cdmatrix &X){
   // std::cout << "Hartree Phonon inside  "  <<tmpG  << " " << X << std::endl;
 }
 
+// Migdal contribution to electronic self-energy, coming from el-ph coupling
 void phonon::rpa(int tstp,GREEN_TSTP &SigmaPh,cntr::herm_matrix_timestep_view<double> & G,cntr::herm_matrix_timestep_view<double> & D){
 	int j1,j2;
   GREEN_TSTP tmp(tstp,SigmaPh.ntau_,1);
