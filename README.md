@@ -46,6 +46,7 @@ Many files are not needed for this purpose. I put them to `other`.
 - mazza: interorbital hopping. beside dipole term, mazza determines off-diagonal elements of hk. its value is put to 0.116 (rescaling is done then by 0.3, which is Ni hopping)
 - delta: orbital energies (diagonal elements of hk) are shifted by \pm delta/2 (and also equilibrium Hartree shift is subtracted!!). delta either set to constant or a time sequence of delta(t) is supplied
 
+COUPLING TO EXTERNAL FIELD
 these parameters govern coupling to electromagnetic field
 - E: either fixed (put to 0.0 for equilibrium) or give file with time series E(t); from that A(t) is calculated (see `exciton_2b.hpp`)
 - dipolRe: real part of dipole moment, which multiplies E(t) to determine electromagnetic coupling. set to 1.0
@@ -53,12 +54,15 @@ these parameters govern coupling to electromagnetic field
 - fieldD: multiplicative factor in dipole term; multiplies E(t). set to 1.0
 - fieldP: multiplicative factor in Peierls substitution; multiplies A(t) in k-shift. set to 1.0
 
+EL-EL INTERACTION
 - U, V and xi: they define the interaction vertex as given in PHYSICAL REVIEW B 94, 035121 (2016) (`exciton_2b.hpp`). in practice here V is put to 0 and in this case the value of xi doesn't matter, so that U is the only meaningful parameter here
 
+PHONONS AND EL-PH COUPLING
 - g: electron-phonon coupling (see `exciton_2b.hpp`)
 - omega0: frequency of phonon mode; only works for omega0 a constant, do not suppy time series because code was not implemented for this
 - migdal: if false (0), then the dynamic part of Sigma_ph ~ g D_0 g G, where g is el-ph coupling and D_0 is bare phonon propagator. if true (1), then dressed phonon propagator is solved via D=D_0 + D_0 Pi_ph D, where Pi_ph ~ gGGg. then, Sigma_ph ~ gDgG. migdal=true provides inclusions of fluctuations beyond classical el-ph coupling
 
+HOLSTEIN BATH
 - gBATH: coupling of electron to bath phonon
 - omegaBATH: frequency of bath phonon mode
 
@@ -67,7 +71,7 @@ parameters not used in current simulation but kept for possible future use
 - tt: time series of hopping. not used in current simulation, but kept for possible future use
 
 Redundant parameters, so I removed them:
-- use_rpa: use_rpa was set to true
+- use_rpa: use_rpa was set to true within the main program anyway
 - v02: does not appear anywhere
 - a_selective: does not appear anywhere
 - approximation: removed it, I will use fixed approximation
@@ -76,8 +80,8 @@ Redundant parameters, so I removed them:
 - gamma: relaxation rate in von Neumann equation, used only if mean field approximation is done. not needed here
 - epsilon: seed for U_k e.g. to measure susceptibility if mean field approximation is done. not needed here
 - om0, s, emp: they determine the nonthermal occupation perturbation if mean field approximation is done. not needed here
-- ratio: used in vkFULL, which is not needed her
-- bath_low, bath_high, gC_bath, gV_bath: they determine fermionic bath, which is however not used here (instead, a phononic bath is used)
+- ratio: used in vkFULL, which is not needed here
+- bath_low, bath_high, gC_bath, gV_bath: they determine fermionic bath, which is however not used here (instead, a phononic bath is used). however, note that in step_impl_2b_optical.hpp there is the code for fermionic bath construction. it is commented out but might be useful for future purposes
   
 ## How one runs the program
 build the executable with ./build.sh
